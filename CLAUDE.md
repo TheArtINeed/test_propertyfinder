@@ -21,6 +21,10 @@
 - Every new feature must be recorded in `feature.md` with a short description.
 - Keep `feature.md` up to date: it must describe every feature developed in the project.
 
+## Done log
+- `done_log.md`: shareable log of main completed steps (date, what, why/outcome).
+- Add an entry after each main step. Never include private notes, keys or task text.
+
 ## Testing
 - All code, including every new feature, must be covered by tests.
 - Workflow: write the code, then run the tests.
