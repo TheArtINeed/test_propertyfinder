@@ -9,8 +9,8 @@ Purpose: what competitors do better or differently, and ideas Property Finder co
 | Positioning | Leading MENA portal, data + SuperAgents | "Real homes, real data, real brokers" | General classifieds with a property vertical | "Cian helps you move in" (end-to-end) |
 | AI | Scout (web beta, investor-heavy) | BayutGPT, AI conversational search (Aug 2026), app inside ChatGPT | Shares Bayut tech (TruEstimate) | Natural-language search in the main search box, CianGPT assistant |
 | Listing trust | Verified, SuperAgent, licenses | **TruCheck** (agent physically visits, geotagged photos, expires after 30 days for rent), "Agent last visited on…" | Verified listings, verified users | "Only on Cian" listings, owner vs agent |
-| Agent trust | SuperAgent (deals + rating) | **TruBroker** (Quality Lister, Responsive Broker), Claim Transactions | — | Agent ratings, "Сделка от Циана" |
-| Valuation | Home valuation + 6-month forecast | **TruEstimate** (claims use in ~50% of ready-property deals in Dubai) | TruEstimate | Price estimate, "Мой дом" (owner hub) |
+| Agent trust | SuperAgent (deals + rating) | **TruBroker** (Quality Lister, Responsive Broker), Claim Transactions | — | Agent ratings, "Cian Deal" |
+| Valuation | Home valuation + 6-month forecast | **TruEstimate** (claims use in ~50% of ready-property deals in Dubai) | TruEstimate | Price estimate, "My Home" (owner hub) |
 | Transactions data | DLD transactions, DataGuru | Dubai Transactions, Sales & Rental History | — | Price history, market analytics |
 | Beyond the lead | Mortgage Finder, Rent in 12 | Upfront costs, Portfolio | Chats, holiday-home bookings | **Deal service, mortgage, insurance, paid early access for renters** |
 
@@ -72,7 +72,7 @@ Purpose: what competitors do better or differently, and ideas Property Finder co
 - **CianGPT / smart assistant**: search by text, answers support questions; plans: compare mortgage vs rent, advice on a specific flat.
 - **New-build comparison**: "press plus, we'll build a table with conclusions" (AI-written comparison of residential complexes).
 - Metro walking time on every card; "Might suit you" personalized feed.
-- **Сделка от Циана** (deal service, 2025): Cian handles the transaction itself (600+ deals in 2025).
+- **Cian Deal** (deal service, 2025): Cian handles the transaction itself (600+ deals in 2025).
 - **Mortgage** marketplace, **My home** (owner hub: valuation, selling), developer promos with discounts.
 - Business: revenue 15.2B RUB in 2025 (+16.7%), profit 2.9B RUB; strong in Moscow / St Petersburg.
 
@@ -191,7 +191,7 @@ Could not inspect live: the site blocked the automated browser with a bot check.
 - [Dubizzle holiday home bookings](https://www.zawya.com/en/press-release/companies-news/dubizzle-launches-direct-holiday-home-bookingsbringing-seamless-reservations-to-millions-on-its-platform-1039347)
 - [CianGPT (Kod)](https://kod.ru/tsiangpt-announce)
 - [Cian 2025 results (AKM)](https://www.akm.ru/news/pribyl_tsian_za_2025_god_uvelichilas_na_16_2/)
-- [Сделка от Циана (Gazeta)](https://www.gazeta.ru/business/news/2026/03/19/28088071.shtml)
+- [Cian Deal (Gazeta)](https://www.gazeta.ru/business/news/2026/03/19/28088071.shtml)
 - [Domclick tests an AI agent for home selection](https://finance.mail.ru/article/domklik-testiruet-ii-agenta-dlya-podbora-zhilya-69214998/)
 - [Avito early access for renters](https://msk1.ru/text/realty/2025/08/29/76006143/)
 - [Avito AI assistants](https://new-retail.ru/novosti/retail/avito_testiruet_ii_assistentov_dlya_pokupateley_i_professionalnykh_prodavtsov/)
