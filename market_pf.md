@@ -37,6 +37,7 @@ Collected 2026-11-21 from public news and PF pages. Numbers are approximate; sou
 - **Supply**: large deliveries 2026-2027 in mid-market areas (JVC, JVT, Dubailand, Dubai South) -> oversupply risk, vacancy may reach ~12%.
 - **Prime areas** stay strong: Downtown, Palm Jumeirah, Dubai Marina.
 - **Demand drivers**: population growth (expats, HNWIs relocating), Golden Visa, no income tax, safe-haven investment, Expo City / Al Maktoum airport growth (Dubai South).
+- **Tourism / short stays**: 19.59M international overnight visitors in 2025 (record, +5%); hotel occupancy 80.7%, ADR AED 579. Holiday homes ~19-34K active listings (source-dependent), 2026 hit by the regional crisis, mid-term stays (1-6 months) growing. PF is weak here (see `competitors.md`).
 - UAE proptech market ~$0.7B (2025, MarkNtel estimate).
 
 ## Clients & audience

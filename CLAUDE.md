@@ -8,7 +8,7 @@
 - `design.md`: Property Finder visual guidelines (colors, fonts, sizes, components). All UI must follow it.
 - `context_pf.md`: Property Finder product: features, user types, use cases.
 - `market_pf.md`: market, business model, clients, growth.
-- `competitors.md`: Bayut, Dubizzle Property, Cian, Domclick, Avito: design, use cases, advantages, ideas for PF.
+- `competitors.md`: Bayut, Dubizzle Property, Cian, Domclick, Avito, Dubai REST, Huspy, Zillow, short-term rentals segment: design, use cases, advantages, ideas for PF.
 - `scout_pf.md`: Scout (PF's AI search assistant) features and ideas for extending it.
 - Read the relevant doc instead of re-researching the site.
 

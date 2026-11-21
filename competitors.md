@@ -1,4 +1,4 @@
-# Competitors: Bayut, Dubizzle Property, Cian, Domclick, Avito
+# Competitors: Bayut, Dubizzle Property, Cian, Domclick, Avito, Dubai REST, Huspy, Zillow + short-term rentals
 
 Researched 2026-11-21: live websites (home, search results, listing page) + public news. Summary in our own words.
 Purpose: what competitors do better or differently, and ideas Property Finder could use.
@@ -123,7 +123,50 @@ Could not inspect live: the site blocked the automated browser with a bot check.
 - **UX research embedded in product teams** (80+ researchers in 2024), Double Diamond for discovery.
 - Mature **design system treated as a product**.
 
-## 6. Where PF can win (ideas)
+## 6. Dubai REST (Dubai Land Department, government app)
+- Official app of DLD; won a 7-star rating in the International Best Practice Competition 2026.
+- Features: **title-deed verification**, ownership checks, **project status** (registered off-plan projects, completion), **licensed broker directory**, "my listings" portfolio tool, official **Rental Index, Sales Index, service-charge indicators**, Ejari and other government services.
+- Not a marketplace (no confirmed public listings feed), but it is the **source of truth** that portals reference.
+- **Threat / opportunity for PF**: users verify outside PF. PF can embed official checks in the listing ("title deed verified", "rent within DLD Rental Index") and become the place where verification happens.
+
+## 7. Huspy (mortgage + real estate, UAE and Spain)
+- Proptech that started as a **digital mortgage broker** and moved into agency services. ~$96M raised (Series B $59M in July 2025, Balderton). Broker portal connects brokers to 25+ banks; acquired Just Mortgages and Finance Lab. Claims (unverified) to process >25% of residential home financing in Dubai.
+- Seen as the agent on Bayut listings ("Contact Huspy to arrange a viewing").
+- **Threat for PF**: owns the money step of the buyer journey (where PF's Mortgage Finder plays) and builds agent supply on top of it.
+- **Lesson**: financing is the strongest wedge into the transaction; affordability drives search.
+
+## 8. Zillow (USA, global benchmark)
+- Strategy: **"housing super app"**: search, agent collaboration, touring, financing and closing connected in one flow; **AI-native** platform.
+- **AI Mode** (Mar 2026): conversational search; users share more needs than in filters. Beta, expanding during 2026.
+- **Rentals** as a growth engine: ~30% YoY growth expected in 2026, target $1B revenue; rentals cover search, messaging, tours, applications, **lease signing and payments**.
+- **Zillow Preview**: pre-market listings (60+ brokerages).
+- Q2 2026 revenue $772M (+18% YoY), driven by rentals and mortgages.
+- **Lesson for PF**: monetize the **rental transaction** (applications, lease, payments: PF has Rent in 12 as a start) and bring AI into the main search flow.
+
+## 9. Short-term rentals (holiday homes): a gap for PF
+### PF today
+- Has a **"Short term rental"** toggle (app) and daily-price listings on web: only **~1,300 daily listings** vs **~168,000** long-term rentals in the UAE.
+- Same flow as long-term: Call / WhatsApp the agent. **No dates, no availability calendar, no instant booking, no reviews, no total price**; many daily listings are 6+ months old.
+
+### Market
+- Dubai: **19.59M international overnight visitors in 2025** (record, +5%); hotel occupancy 80.7%, ADR AED 579.
+- Holiday homes: ~19-34K active listings depending on the source (AirDNA vs First Class index); 2026 hit by the regional crisis (occupancy and ADR down in Q2, recovery in H2), **longer stays** growing (1-6 months: relocators, digital nomads).
+- DET (tourism department) licenses holiday homes; owners can register up to 8 units before needing a trade license. Professional operators (e.g. Stella Stays, Frank Porter, GuestReady) manage much of the supply.
+
+### Competitors in this segment
+| Player | What they offer |
+|---|---|
+| **Airbnb, Booking.com, Vrbo** | Global demand, instant booking, reviews, payments; main channel for tourists |
+| **Dubizzle** | Direct holiday-home booking from licensed operators (launched 2025-26) |
+| **Avito (Russia)** | Online booking + host reviews of guests, benchmark for classifieds moving into bookings |
+| **Operators' own sites** | Stella Stays, Frank Porter etc. |
+
+### Why it matters / ideas for PF
+- PF's audience is **not tourists** but people **moving to / within the UAE**: the fit is **mid-term stays (1-6 months)** for relocators who need a place while searching for a long-term home. Bridges short-term demand into PF's core rental and buy funnels.
+- Ideas: dates + availability, monthly price for 1-6 month stays, verified operators (DET permit shown), request-to-book via operators' channel managers, reviews; cross-sell "find your long-term home" during the stay.
+- Monetization: booking commission (new revenue line) vs agent leads today.
+
+## 10. Where PF can win (ideas)
 1. **AI in the main search bar (web + app)**: natural language -> visible, editable filter chips (Cian pattern) + "ask Scout" for deeper questions. Measure: search-to-lead conversion, holdout by user.
 2. **Availability / freshness signal**: "Confirmed available X days ago" from agent check-ins or tenant reports; rank fresher listings higher. PF has "Verified", Bayut shows visit dates.
 3. **Post-contact follow-up**: after Call/WhatsApp ask "Did the agent reply? Is it still available?" -> feeds agent ranking (SuperAgent) and listing quality. Neither competitor closes this loop visibly.
@@ -134,6 +177,9 @@ Could not inspect live: the site blocked the automated browser with a bot check.
 8. **Seeker premium** (Cian and Avito early access) as a test: alerts first / priority viewing, careful with marketplace balance.
 9. **Affordability-first search** (Domclick): Mortgage Finder pre-approval -> "homes you can afford" feed and "mortgage-ready" badge on cards.
 10. **Decision badges on cards** (Domclick): price per sqft vs area average, price trend, verified, mortgage-ready.
+11. **Official checks inside PF** (Dubai REST): title deed / permit verified, rent vs DLD Rental Index.
+12. **Mid-term stays for relocators** (short-term gap): dates, availability, monthly price, request-to-book, cross-sell into long-term search.
+13. **Rental transaction** (Zillow): application, Ejari/lease, payments on top of Rent in 12.
 
 ## Sources
 - [Bayut AI search, BayutGPT, ChatGPT app (The National)](https://www.thenationalnews.com/advertorial/2026/09/28/bayut-expands-conversational-property-discovery-with-new-ai-search/)
@@ -150,3 +196,13 @@ Could not inspect live: the site blocked the automated browser with a bot check.
 - [Avito early access for renters](https://msk1.ru/text/realty/2025/08/29/76006143/)
 - [Avito AI assistants](https://new-retail.ru/novosti/retail/avito_testiruet_ii_assistentov_dlya_pokupateley_i_professionalnykh_prodavtsov/)
 - [Avito A/B platform Trisigma (Habr)](https://habr.com/ru/articles/854110)
+- [Dubai REST 7-star rating (WAM)](https://www.wam.ae/en/article/c363d76-dubai-rest-achieves-seven-star-rating)
+- [Dubai REST features (Gulf News)](https://gulfnews.com/living-in-uae/housing/investing-or-renting-a-property-in-dubai-heres-why-you-should-download-the-dubai-rest-app-1.1691161626231)
+- [Huspy (CB Insights)](https://www.cbinsights.com/company/huspy)
+- [Zillow AI Mode](https://www.zillow.com/news/zillow-debuts-ai-mode)
+- [Zillow Q2 2026 earnings (HousingWire)](https://www.housingwire.com/articles/zillow-q2-2026-earnings/)
+- [Zillow super app (Inman)](https://www.inman.com/2026/11/04/zillow-housing-super-app-where-its-headed-per-its-coo/)
+- [Dubai tourism 2025 record (Dubai Media Office)](https://www.mediaoffice.ae/en/news/2026/february/09-02/dubais-tourism-industry-achieves-third-successive-record-breaking-year)
+- [Dubai short-term rentals 2026 (Skift)](https://skift.com/2026/09/02/for-uae-short-term-rentals-occupancy-is-recovering-demand-hasnt-fully-caught-up/)
+- [Dubai STR demand and longer stays (Khaleej Times)](https://www.khaleejtimes.com/business/property/dubai-short-term-rental-property-demand-2026)
+- [Holiday home licensing (Engel & Völkers)](https://www.engelvoelkers.com/ae/en/resources/holiday-home-license-dubai)

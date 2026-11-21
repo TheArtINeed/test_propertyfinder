@@ -30,6 +30,10 @@ Source: propertyfinder.ae (browsed 2026-11-21) + public news. Summary in our own
 - Map view, sorting, **saved search / "Create alert"**.
 - Commercial, hotel apartments, villas, short pages for SEO ("2 bedroom apartments for rent in Dubai Marina").
 
+### Short-term rentals (weak spot)
+- "Short term rental" toggle in the app; daily-price listings on web (~1,300 vs ~168K long-term rentals in the UAE).
+- No dates, availability calendar, booking, reviews or total price; contact via Call/WhatsApp like long-term. Many listings are old. See `competitors.md` section 9.
+
 ### Listing card
 - Photo carousel, Save (heart), badges: **Verified** (checked listing), **Spotlight** / **Premium** / Standard (paid visibility tiers).
 - Price (yearly for rent), title, beds/baths/area/type, address, agent + agency logo, **SuperAgent** label.
