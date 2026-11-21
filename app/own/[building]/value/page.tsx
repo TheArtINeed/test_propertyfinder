@@ -1,0 +1,149 @@
+import Link from "next/link";
+import { loadSnapshot } from "@/lib/data";
+import { monthlyPerSqm, valuationInsights } from "@/lib/insights";
+import { ReadingCard } from "../../../components/insights";
+import { PriceChart } from "../../../components/price-chart";
+import { estimateValue, findBuilding, outlook, pricePerSqm, type CompLevel } from "@/lib/market";
+import { parseUnitQuery } from "@/lib/owner";
+import { aed, dateLabel, pct, roomsLabel, roundEstimate } from "@/lib/format";
+import { DealList, GetMonthly, Track } from "../../../components/client";
+import { BuildingNotFound, ComingSoon, Empty, FooterNote, MissingUnit, Source, TopBar } from "../../../ui";
+
+type Props = { params: Promise<{ building: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
+
+const LEVEL_TEXT: Record<CompLevel, string> = {
+  building_rooms: "same building, same bedrooms, similar size",
+  building_any: "same building, all unit types (price per m²)",
+  jvc_rooms: "JVC, same bedrooms and similar size",
+};
+
+export default async function Valuation({ params, searchParams }: Props) {
+  const { building: slug } = await params;
+  const sp = await searchParams;
+  const q = parseUnitQuery(sp);
+  const { buildings, resales, rents } = loadSnapshot();
+  const b = findBuilding(buildings, slug);
+  if (!b) return <BuildingNotFound />;
+  if (!b.active) return <ComingSoon name={b.name} />;
+  if (!q) return <MissingUnit slug={slug} />;
+
+  const unit = { building: b.name, rooms: q.rooms, sizeSqm: q.sizeSqm };
+  const est = estimateValue(resales, unit);
+  const back = `/own/${slug}?unit=${encodeURIComponent(q.unit)}&rooms=${q.rooms}&size=${q.sizeSqm}`;
+  if (!est) {
+    return (
+      <main className="shell">
+        <TopBar back={back} title="Valuation" />
+        <Empty
+          icon="∅"
+          title="Not enough deals to value this unit"
+          hint="No resales of this size in the last 3 months, even across JVC. Check the size or bedrooms."
+          action={<Link className="btn" href={back}>Edit unit</Link>}
+        />
+      </main>
+    );
+  }
+  const o = outlook(resales);
+  const reading = valuationInsights(resales, rents, unit, est);
+  const series = priceSeries(resales, b.name, q.rooms);
+  const deals = [...est.comps.rows].sort((a, c) => c.date.localeCompare(a.date));
+  const fromBuy = q.from === "buy";
+
+  return (
+    <main className="shell">
+      <Track name="valuation_viewed" props={{ building: b.name, rooms: q.rooms, confidence: est.confidence, level: est.comps.level, from: q.from }} />
+      <TopBar back={fromBuy ? "/buy" : back} title={`${b.name} · ${q.unit || "unit"}`} />
+      <p className="meta" style={{ marginTop: 8 }}>
+        {roomsLabel(q.rooms)} · {q.sizeSqm} m² · {b.name}
+      </p>
+      {fromBuy && q.pricePaid ? (
+        <div className="card info">
+          <p className="meta">From your price check: you paid {aed(q.pricePaid)}.</p>
+        </div>
+      ) : null}
+
+      <div className="card">
+        <p className="meta">Estimated value today</p>
+        <div className="big">{aed(roundEstimate(est.mid))}</div>
+        <p className="range">
+          Range {aed(roundEstimate(est.low))} – {aed(roundEstimate(est.high))} · {aed(est.perSqm)} / m²
+        </p>
+        <div className="row" style={{ flexWrap: "wrap" }}>
+          <span className={`badge ${est.confidence === "high" ? "ok" : est.confidence === "low" ? "warn" : ""}`}>
+            {est.confidence === "high" ? "High" : est.confidence === "medium" ? "Medium" : "Low"} confidence
+          </span>
+          <Source kind="estimate" />
+          <Source kind="dld" />
+        </div>
+        {est.confidence === "low" ? (
+          <p className="hint">
+            Few resales like yours in the last 3 months, so we used {LEVEL_TEXT[est.comps.level]}. The range is wider.
+          </p>
+        ) : null}
+        <div style={{ marginTop: 12 }}>
+          <DealList summary={`Based on ${deals.length} deals: ${LEVEL_TEXT[est.comps.level]}, Aug – Oct 2026`}>
+            <ul className="list">
+              {deals.slice(0, 25).map((d) => (
+                <li key={d.id}>
+                  <span>
+                    {dateLabel(d.date)}
+                    <span className="meta"> · {d.rooms != null ? roomsLabel(d.rooms) : "–"}, {d.size_sqm} m²{est.comps.level === "jvc_rooms" && d.project ? ` · ${d.project}` : ""}</span>
+                  </span>
+                  <span>
+                    {aed(d.value_aed, { compact: true })}
+                    <span className="meta"> · {aed(pricePerSqm(d), { compact: true })}/m²</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {deals.length > 25 ? <p className="tiny">and {deals.length - 25} more</p> : null}
+            <Source kind="dld" />
+          </DealList>
+        </div>
+      </div>
+
+      <ReadingCard reading={reading} limit={4} />
+
+      <div className="card">
+        <PriceChart series={series.series} title={series.title} />
+        <Source kind="dld" />
+      </div>
+
+      <div className="card">
+        <h3>Next 12 months</h3>
+        <div className="mid">
+          {aed(roundEstimate(est.mid * (1 + o.low)), { compact: true })} – {aed(roundEstimate(est.mid * (1 + o.high)), { compact: true })}
+        </div>
+        <p className="meta">
+          {pct(o.low, 0, true)} to {pct(o.high, 0, true)} a year. JVC resale prices per m² moved {pct(o.trend, 0, true)} a year
+          (Jan – Mar vs Aug – Oct 2026). The low end also allows for new supply in 2026 – 27.
+        </p>
+        <Source kind="estimate">, not advice</Source>
+      </div>
+
+      <GetMonthly
+        ctx={{ slug, building: b.name, unitNumber: q.unit, rooms: q.rooms, sizeSqm: q.sizeSqm }}
+        prefillPaid={q.pricePaid}
+      />
+      <FooterNote />
+    </main>
+  );
+}
+
+/** Building vs JVC, same bedrooms if the building has enough monthly deals, else all flats. */
+function priceSeries(resales: Parameters<typeof monthlyPerSqm>[0], building: string, rooms: number) {
+  const sameRooms = monthlyPerSqm(resales, (r) => r.project === building && r.rooms === rooms);
+  const useRooms = sameRooms.filter((p) => p.value != null).length >= 5;
+  const label = rooms === 0 ? "studios" : `${rooms}BR`;
+  return {
+    title: useRooms ? `Median price per m², ${label}, 2026` : "Median price per m², all flats, 2026",
+    series: [
+      { name: building, color: "#6250d6", points: useRooms ? sameRooms : monthlyPerSqm(resales, (r) => r.project === building) },
+      {
+        name: "JVC",
+        color: "#eb6834",
+        points: monthlyPerSqm(resales, (r) => r.sub_type === "Flat" && (useRooms ? r.rooms === rooms : true)),
+      },
+    ],
+  };
+}
