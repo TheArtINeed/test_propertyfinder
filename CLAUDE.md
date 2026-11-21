@@ -2,8 +2,11 @@
 
 ## Project
 - Take-home build challenge for Property Finder (propertyfinder.ae, UAE real estate portal).
-- 6-hour timed task (~3h of focused work). The exact task is not known yet; details will be added once it starts.
-- Deliverable: this GitHub repo. Partial work is fine if what is missing is explained honestly.
+- 6-hour timed task (~3h of focused work), started 2026-11-21 18:02, ends 2026-11-22 00:02.
+- Task (our summary, not the brief text): PropWorth (PF's home valuation for owners) is used once and never again. Give owners a real reason to open PF every month. Level: owners who bought a resale home from another owner; PF as the place where the search doesn't end.
+- Must have: mobile-first clickable prototype on real public data for one building or community; owner flow starts from the PropWorth valuation; a renter flow reachable from the first screen and linked to the owner side; no pitch text or instructions inside the UI. Public data only.
+- Deliverables: repo with code and a short `README.md` (how to run, what is real vs mocked); live link that works on a phone; `ONE-PAGER.md` (market with sources; who it helps: renters, buyers, sellers, owners, one example each; which portal metrics it moves and by how much; what the data makes possible; one number and a test on 1% of owners); Google Drive folder shared as "Anyone with the link can view".
+- Plan and scope: `docs/SPEC.md`. Partial work is fine if what is missing is explained honestly.
 ## Reference docs
 - `design.md`: Property Finder visual guidelines (colors, fonts, sizes, components). All UI must follow it.
 - `context_pf.md`: Property Finder product: features, user types, use cases.

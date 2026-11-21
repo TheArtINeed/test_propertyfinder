@@ -48,7 +48,7 @@ Currency: AED is pegged, 1 USD = 3.6725 AED.
 | Avg annual rent on PF | AED 100-120K | assumption (DLD avg AED 92K, PF skews up) |
 | Avg secondary sale price | AED 1.8-2.2M | assumption (DLD avg AED 3.1M incl. off-plan and large deals) |
 | Fully loaded Dubai FTE | $180K / yr | assumption |
-| LLM cost per Scout conversation | ~$0.07 | derived: 6 turns x (4K in + 0.4K out), Sonnet 5.5 list price |
+| LLM cost per Scout conversation | ~$0.07 | derived: 6 turns x (4K in + 0.4K out) at ~$2 / $10 per 1M tokens; recompute with the price of the OpenAI model used |
 
 ## Competitors (one line each)
 - **Bayut** (Dubizzle Group, adj. revenue ~$183M 2024): early in AI (BayutGPT, AI Search, app inside ChatGPT). Main rival.
