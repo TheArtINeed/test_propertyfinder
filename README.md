@@ -2,6 +2,8 @@
 
 **Live prototype (open on a phone): https://test-propertyfinder.vercel.app**
 
+**Google Drive (docs, walkthrough deck, screenshots): https://drive.google.com/drive/folders/1iel6pnXt46kyz_A2b9AzEoKaM-Ai8UVP**
+
 After the PropWorth valuation, a unit becomes **My Home**: a monthly update on rents, deals and demand in the building, plus one next step. The owner's intent ("rent out from / open to offers from / not now") becomes a qualified lead for agents and an "owner-confirmed" signal for renters. Renters get Rent watch and a renewal check; buyers get a fair-price and bank-gap check that turns into My Home with one tap.
 
 Business case: `ONE-PAGER.md`. Dev spec: `docs/SPEC.md`.
