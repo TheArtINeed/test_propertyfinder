@@ -51,7 +51,9 @@ describe("smoke: every route renders for the hero building and has a next action
   it("/rent and /buy offer only the pilot building; others disabled", async () => {
     const h = await html(Buy({ searchParams: Promise.resolve({ b: "binghatti-apex" }) }));
     expect(h).toMatch(/<option value="luma-park-views" selected="">Luma Park Views<\/option>/);
-    expect(h).toMatch(/<option value="binghatti-apex" disabled="">Binghatti Apex · coming soon<\/option>/);
+    // F3 (spec v7): one disabled line instead of ~90 options.
+    expect(h).toContain('<option value="" disabled="">Other JVC buildings: coming soon</option>');
+    expect((h.match(/<option /g) ?? []).length).toBe(2 + 4); // building select (2) + bedrooms (4)
   });
 
   it("My Home tabs: analysis, news, community (V5-V9)", async () => {
@@ -60,7 +62,9 @@ describe("smoke: every route renders for the hero building and has a next action
     expect(a).toContain("What this means");
     expect(a).toContain("Median price per m²");
     const n = await html(MyHome(props(hero, { ...base, tab: "news" })));
-    expect(n).toContain("News for your home");
+    // N2 (spec v7): two sections with headings.
+    expect(n).toContain("Market moves");
+    expect(n).toContain("Building and area news");
     expect(n).toContain("Illustrative example, not a real event");
     expect(n).toContain("DLD / Ejari open data");
     const c = await html(MyHome(props(hero, { ...base, tab: "community" })));

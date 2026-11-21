@@ -6,7 +6,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { EventName } from "@/lib/events";
 import { searchBuildings, type Building } from "@/lib/market";
 import { roomsLabel } from "@/lib/format";
-import { getHomes, homeId, saveHome, type Home } from "@/lib/owner";
+import { CHANNEL_LABEL, FREQUENCY_LABEL, getHomes, homeId, nextUpdateDate, saveHome, type Channel, type Frequency, type Home } from "@/lib/owner";
+import { dateLabel } from "@/lib/format";
 import { AS_OF, SQFT_PER_SQM } from "@/lib/types";
 import { hasErrors, validateClaim, validateUnitForm, type ClaimErrors, type FieldErrors } from "@/lib/forms";
 import { track } from "@/lib/track";
@@ -277,6 +278,8 @@ export function GetMonthly({ ctx, prefillPaid }: { ctx: UnitCtx; prefillPaid?: n
   const [deed, setDeed] = useState<string>(DEMO.owner.titleDeed);
   const [consent, setConsent] = useState<boolean>(DEMO.owner.consent);
   const [unitNo, setUnitNo] = useState(ctx.unitNumber || DEMO.unit);
+  const [channel, setChannel] = useState<Channel>(DEMO.subscription.channel);
+  const [frequency, setFrequency] = useState<Frequency>(DEMO.subscription.frequency);
   const [errors, setErrors] = useState<ClaimErrors>({});
   const clear = (k: keyof ClaimErrors) => setErrors((x) => ({ ...x, [k]: undefined }));
 
@@ -305,12 +308,14 @@ export function GetMonthly({ ctx, prefillPaid }: { ctx: UnitCtx; prefillPaid?: n
       leaseEnd: occ === "let" ? leaseEnd : null,
       pricePaid: num(paid),
       loan: num(loan),
+      subscription: { channel, frequency, since: AS_OF },
     };
     try {
       saveHome(localStorage, home);
     } catch {
       /* storage blocked: the URL still carries the unit */
     }
+    track("digest_subscribed", { channel, frequency, building: ctx.building });
     track("unit_claimed", { building: ctx.building, rooms: ctx.rooms, verification: home.verification, occupancy: occ });
     router.push(homeUrl(home));
   }
@@ -338,7 +343,24 @@ export function GetMonthly({ ctx, prefillPaid }: { ctx: UnitCtx; prefillPaid?: n
                 ✕
               </button>
             </div>
-            <p className="meta">Optional details make the monthly update more useful. You can change them later.</p>
+            <label>Send my update by</label>
+            <div className="chips" role="group" aria-label="Channel">
+              {(Object.keys(CHANNEL_LABEL) as Channel[]).map((c) => (
+                <button key={c} type="button" className="chip" aria-pressed={channel === c} onClick={() => setChannel(c)}>
+                  {CHANNEL_LABEL[c]}
+                </button>
+              ))}
+            </div>
+            <label>How often</label>
+            <div className="chips" role="group" aria-label="Frequency">
+              {(Object.keys(FREQUENCY_LABEL) as Frequency[]).map((f) => (
+                <button key={f} type="button" className="chip" aria-pressed={frequency === f} onClick={() => setFrequency(f)}>
+                  {FREQUENCY_LABEL[f]}
+                </button>
+              ))}
+            </div>
+            <p className="hint">Next update: {dateLabel(nextUpdateDate())}. Delivery is simulated in this prototype.</p>
+            <p className="meta" style={{ marginTop: 12 }}>Optional details make the update more useful. You can change them later.</p>
             {!ctx.unitNumber ? (
               <>
                 <label htmlFor="unitNo">Unit number</label>
@@ -390,7 +412,7 @@ export function GetMonthly({ ctx, prefillPaid }: { ctx: UnitCtx; prefillPaid?: n
             </label>
             <FieldError id="consent-err" msg={errors.consent} />
             <div style={{ marginTop: 16 }}>
-              <button className="btn" type="submit">Save my home</button>
+              <button className="btn" type="submit">Save and get my update</button>
             </div>
           </form>
         </div>

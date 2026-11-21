@@ -51,7 +51,10 @@ export function nextStep(input: {
   unitYield: number | null;
   jvcYield: number;
 }): NextStep {
-  if (input.daysToLeaseEnd != null && input.daysToLeaseEnd >= 0 && input.daysToLeaseEnd <= RELET_DAYS)
+  // F1: an ended lease beats everything: the unit may be empty.
+  if (input.daysToLeaseEnd != null && input.daysToLeaseEnd < 0)
+    return { kind: "relet", title: "Your lease has ended: re-let now", illustrative: false };
+  if (input.daysToLeaseEnd != null && input.daysToLeaseEnd <= RELET_DAYS)
     return { kind: "relet", title: "Lease ends soon: set your re-let plan", illustrative: false };
   if (input.ownerGap != null && input.ownerGap > RENEWAL_RISK_GAP)
     return { kind: "renewal_risk", title: "Your rent is above new leases: consider a discount at renewal", illustrative: false };
@@ -119,4 +122,21 @@ export function buildDigest(
     nextStep: nextStep({ daysToLeaseEnd, ownerGap, demandHigh: demand.level === "high", unitYield, jvcYield: jvc }),
     order,
   };
+}
+
+/**
+ * V12: the digest as a 3-line WhatsApp message, built from the same numbers as the screen.
+ * Plain text, no numbers of its own.
+ */
+export function digestMessage(d: Digest, building: string, unitNumber: string, url: string): string[] {
+  const k = (n: number) => (n >= 1_000_000 ? `AED ${(n / 1_000_000).toFixed(2).replace(/\.?0+$/, "")}M` : `AED ${Math.round(n / 1000)}K`);
+  const month = new Date(d.month + "-01T00:00:00Z").toLocaleString("en-US", { month: "long", timeZone: "UTC" });
+  const rent = d.rent.stats.count
+    ? `${d.rent.stats.count} new leases like yours, median ${k(d.rent.stats.median)}`
+    : "no new leases like yours this month";
+  return [
+    `${building} ${unitNumber}, ${month}: worth ${k(Math.round(d.capital.low / 5000) * 5000)}–${k(Math.round(d.capital.high / 5000) * 5000)}.`,
+    `${d.deals.all.length} resales in the building; ${rent}.`,
+    `Next step: ${d.nextStep.title}. ${url}`,
+  ];
 }

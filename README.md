@@ -20,6 +20,7 @@ Python data tests: `python3 -m unittest discover -s tests -t .`
 - `/entry-points`: where My Home would appear on other Property Finder screens, and why each hook is useful.
 - **Pilot: one building (Luma Park Views).** Other JVC buildings are shown as "coming soon" and cannot be chosen.
 - **Demo prefill:** every form opens with demo values (`lib/demo.ts`) so you can click straight through; all fields are editable. Consent boxes are pre-ticked only for the demo: a real product never pre-ticks consent.
+- **Return and leads (spec section 14):** owners choose WhatsApp / email / in-app and a frequency when they save their home (changeable on My Home) and see the WhatsApp version of the update; renters get renewal reminders and units that free up when their lease ends, each with a viewing request; buyers get mortgage pre-approval and "ask an agent". On My Home the numbers are one block (with "Market moves" from DLD / Ejari); building and area news is a separate block below.
 - **Sanity checks:** inputs must be plausible for a JVC home (rent AED 10K–2M a year, prices AED 100K–50M, loan ≤ price paid, lease end not in the past, dates within 2–5 years); the message shows under the field. Out-of-range values in shared links are ignored.
 
 ## Data
@@ -33,7 +34,7 @@ Real public data: Dubai Land Department resales and Ejari contracts for JVC, 1 J
 ## Real vs mocked
 | Real (DLD / Ejari) | Mocked |
 |---|---|
-| Estimate and range, deal lists, outlook, rents, Rent watch, RERA proxy, yield, bank gap, rent vs buy, "What this means" readings, price chart, deal / lease news items | Demand block (labelled "Illustrative"), editorial news (tower, school, road works, service charge) and owners' posts (labelled illustrative), waitlist, title deed verification, leads (stored in the browser, nothing sent), owner-confirmed units (synthetic listings), mortgage rate (example 4.5%, editable) |
+| Estimate and range, deal lists, outlook, rents, Rent watch, RERA proxy, yield, bank gap, rent vs buy, "What this means" readings, price chart, deal / lease news items | Demand block (labelled "Illustrative"), editorial news (tower, school, road works, service charge) and owners' posts (labelled illustrative), waitlist, the agent who gets a request and its status (Sent → Accepted → Viewing), digest delivery by WhatsApp / email, renter reminders, viewing / mortgage / buyer requests, title deed verification, leads (stored in the browser, nothing sent), owner-confirmed units (synthetic listings), mortgage rate (example 4.5%, editable) |
 
 ## Calculation notes
 - Estimate: median AED/m² of comps in the last 3 months × size, range P25–P75. Fallback: same building any rooms → JVC same rooms; confidence drops to low.

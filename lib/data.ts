@@ -53,7 +53,7 @@ export function ownerConfirmedUnits(): OwnerConfirmed[] {
   const data = JSON.parse(readFileSync(path.join(process.cwd(), "dataset", "listings.json"), "utf8"));
   return (data.listings as Record<string, unknown>[])
     .filter((l) => l.area === "Jumeirah Village Circle" && l.purpose === "rent" && l.property_type === "apartment")
-    .slice(0, 3)
+    .slice(0, 6)
     .map((l) => ({
       id: String(l.id),
       bedrooms: Number(l.bedrooms),

@@ -1,48 +1,81 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { NewsItem, Post } from "@/lib/news";
+import { IMPACT_WORD, type NewsItem, type Post } from "@/lib/news";
 import { track } from "@/lib/track";
 
 const IMPACT = { up: "▲", down: "▼", neutral: "•" } as const;
 const date = (iso: string) => new Date(iso + "T00:00:00Z").toLocaleString("en-US", { day: "numeric", month: "short", timeZone: "UTC" });
 
-export function NewsFeed({ items, building }: { items: NewsItem[]; building: string }) {
-  const [filter, setFilter] = useState<"all" | "data" | "View">("all");
-  useEffect(() => track("feed_opened", { tab: "news", building }), [building]);
-  const shown = items.filter((i) => filter === "all" || (filter === "data" ? i.kind === "data" : i.tag === filter));
+/** One news item: date, source, impact (icon + word), label. Opening it logs news_opened. */
+function NewsItemView({ n }: { n: NewsItem }) {
   return (
-    <div className="card">
-      <h2>News for your home</h2>
-      <p className="meta">Deals, rents and what is planned around {building}, with the likely effect on your price.</p>
-      <div className="chips" role="group" aria-label="Filter news">
-        {([
-          ["all", "All"],
-          ["data", "Deals & rents"],
-          ["View", "View & building"],
-        ] as const).map(([k, l]) => (
-          <button key={k} className="chip" aria-pressed={filter === k} onClick={() => setFilter(k)}>
-            {l}
-          </button>
+    <li className={`news ${n.kind}`}>
+      <details onToggle={(e) => (e.currentTarget as HTMLDetailsElement).open && track("news_opened", { item: n.id, real: n.kind === "data" })}>
+        <summary>
+          <span className="between">
+            <span className="tiny">
+              {n.tag} · {date(n.date)}
+            </span>
+            <span className={`impact ${n.impact}`}>
+              <span aria-hidden>{IMPACT[n.impact]}</span> {IMPACT_WORD[n.impact]}: {n.impactText}
+            </span>
+          </span>
+          <b className="news-title">{n.title}</b>
+        </summary>
+        <p className="meta">{n.body}</p>
+      </details>
+      <span className={n.kind === "data" ? "src" : "src illustrative"}>{n.source}</span>
+    </li>
+  );
+}
+
+export function NewsList({ items }: { items: NewsItem[] }) {
+  return (
+    <ul className="feed">
+      {items.map((n) => (
+        <NewsItemView key={n.id} n={n} />
+      ))}
+    </ul>
+  );
+}
+
+/** N2: market moves are numbers; shown inside the numbers block. */
+export function MarketMoves({ items }: { items: NewsItem[] }) {
+  if (!items.length) return null;
+  return (
+    <section>
+      <h3>Market moves</h3>
+      <NewsList items={items} />
+    </section>
+  );
+}
+
+/** N1/N2: building and area news, a separate block below the numbers. */
+export function AreaNewsBlock({ items, building }: { items: NewsItem[]; building: string }) {
+  useEffect(() => track("feed_opened", { tab: "news", building }), [building]);
+  return (
+    <section className="news-block" data-block="news" aria-label="Building and area news">
+      <h2>
+        <span aria-hidden>📰</span> Building and area news
+      </h2>
+      <p className="meta">What is planned around {building} and how it may affect your price.</p>
+      <NewsList items={items} />
+    </section>
+  );
+}
+
+/** V12: the same digest as a WhatsApp message. */
+export function WhatsAppPreview({ lines }: { lines: string[] }) {
+  return (
+    <div className="card wa">
+      <p className="tiny">How it arrives on WhatsApp</p>
+      <div className="wa-bubble">
+        {lines.map((l, i) => (
+          <p key={i}>{l}</p>
         ))}
       </div>
-      <ul className="feed">
-        {shown.map((n) => (
-          <li key={n.id}>
-            <div className="between">
-              <span className="tiny">
-                {n.tag} · {date(n.date)}
-              </span>
-              <span className={`impact ${n.impact}`}>
-                <span aria-hidden>{IMPACT[n.impact]}</span> {n.impactText}
-              </span>
-            </div>
-            <h3>{n.title}</h3>
-            <p className="meta">{n.body}</p>
-            {n.kind === "data" ? <span className="src">DLD / Ejari open data</span> : <span className="src illustrative">Illustrative example, not a real event</span>}
-          </li>
-        ))}
-      </ul>
+      <p className="tiny">Preview only: no message is sent.</p>
     </div>
   );
 }

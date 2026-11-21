@@ -18,7 +18,11 @@ export interface NewsItem {
   impact: Impact;
   impactText: string;
   kind: "data" | "illustrative";
+  source: string;
 }
+
+export const DATA_SOURCE = "DLD / Ejari open data";
+export const ILLUSTRATIVE_LABEL = "Illustrative example, not a real event";
 
 const k = (n: number) => `AED ${n >= 1_000_000 ? (n / 1_000_000).toFixed(2).replace(/\.?0+$/, "") + "M" : Math.round(n / 1000) + "K"}`;
 const lastDay = (month: string) => {
@@ -48,6 +52,7 @@ export function dataNews(resales: SaleRow[], rents: RentRow[], building: string,
       impact: record ? "up" : "neutral",
       impactText: record ? "Supports your estimate" : "In line with your range",
       kind: "data",
+      source: DATA_SOURCE,
     });
   }
 
@@ -64,6 +69,7 @@ export function dataNews(resales: SaleRow[], rents: RentRow[], building: string,
       impact: busier ? "up" : "neutral",
       impactText: busier ? "More buyers active" : "Normal activity",
       kind: "data",
+      source: DATA_SOURCE,
     });
   }
 
@@ -79,6 +85,7 @@ export function dataNews(resales: SaleRow[], rents: RentRow[], building: string,
       impact: "neutral",
       impactText: "Sets the rent your tenant compares with",
       kind: "data",
+      source: DATA_SOURCE,
     });
   }
   return out.sort((a, c) => c.date.localeCompare(a.date));
@@ -95,6 +102,7 @@ export const ILLUSTRATIVE_NEWS: NewsItem[] = [
     impact: "down",
     impactText: "East-facing, lower floors: view risk",
     kind: "illustrative",
+    source: ILLUSTRATIVE_LABEL,
   },
   {
     id: "ill-school",
@@ -105,6 +113,7 @@ export const ILLUSTRATIVE_NEWS: NewsItem[] = [
     impact: "up",
     impactText: "More demand for 2–3BR",
     kind: "illustrative",
+    source: ILLUSTRATIVE_LABEL,
   },
   {
     id: "ill-road",
@@ -115,6 +124,7 @@ export const ILLUSTRATIVE_NEWS: NewsItem[] = [
     impact: "neutral",
     impactText: "Short-term only",
     kind: "illustrative",
+    source: ILLUSTRATIVE_LABEL,
   },
   {
     id: "ill-service",
@@ -125,6 +135,7 @@ export const ILLUSTRATIVE_NEWS: NewsItem[] = [
     impact: "down",
     impactText: "Slightly lower net yield",
     kind: "illustrative",
+    source: ILLUSTRATIVE_LABEL,
   },
 ];
 
@@ -182,3 +193,11 @@ export const ILLUSTRATIVE_POSTS: Post[] = [
 export function buildFeed(resales: SaleRow[], rents: RentRow[], building: string, rooms: number, month = DIGEST_MONTH): NewsItem[] {
   return [...dataNews(resales, rents, building, rooms, month), ...ILLUSTRATIVE_NEWS].sort((a, c) => c.date.localeCompare(a.date));
 }
+
+/** N2: "Market moves" = numbers from DLD / Ejari; they stay with the numbers. */
+export const marketMoves = dataNews;
+/** N2: "Building and area news" = project and editorial items; only in the news block. */
+export function areaNews(): NewsItem[] {
+  return [...ILLUSTRATIVE_NEWS].sort((a, c) => c.date.localeCompare(a.date));
+}
+export const IMPACT_WORD: Record<Impact, string> = { up: "Up", down: "Down", neutral: "Neutral" };

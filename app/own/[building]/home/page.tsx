@@ -2,16 +2,16 @@ import Link from "next/link";
 import { loadSnapshot } from "@/lib/data";
 import { estimateValue } from "@/lib/market";
 import { monthlyPerSqm, valuationInsights } from "@/lib/insights";
-import { buildFeed, ILLUSTRATIVE_POSTS } from "@/lib/news";
+import { areaNews, ILLUSTRATIVE_POSTS, marketMoves } from "@/lib/news";
 import { ReadingCard } from "../../../components/insights";
 import { PriceChart } from "../../../components/price-chart";
-import { Community, NewsFeed } from "../../../components/feed";
-import { buildDigest, RELET_DAYS, type Digest } from "@/lib/digest";
+import { AreaNewsBlock, Community, MarketMoves, NewsList, WhatsAppPreview } from "../../../components/feed";
+import { buildDigest, digestMessage, RELET_DAYS, type Digest } from "@/lib/digest";
 import { findBuilding, pricePerSqm } from "@/lib/market";
 import { homeId, parseUnitQuery, type Home } from "@/lib/owner";
 import { filterRents, renewalCheck, rentStats, reraIndexProxy } from "@/lib/rent";
 import { aed, dateLabel, monthLabel, pct, roomsLabel, roundEstimate } from "@/lib/format";
-import { AS_OF, DIGEST_MONTH } from "@/lib/types";
+import { AS_OF, DIGEST_MONTH, type RentRow } from "@/lib/types";
 import { Track } from "../../../components/client";
 import { HomePanel } from "../../../components/home-panel";
 import { BuildingNotFound, ComingSoon, FooterNote, MissingUnit, Source, TopBar } from "../../../ui";
@@ -91,17 +91,39 @@ export default async function MyHome({ params, searchParams }: Props) {
       </nav>
 
       {tab === "analysis" ? <Analysis resales={resales} rents={rents} unit={unit} d={d} /> : null}
-      {tab === "news" ? <NewsFeed items={buildFeed(resales, rents, b.name, q.rooms)} building={b.name} /> : null}
+      {tab === "news" ? (
+        <>
+          <div className="card" data-block="numbers">
+            <h2>Market moves</h2>
+            <p className="meta">Numbers from registered deals and leases in {b.name}.</p>
+            <NewsList items={marketMoves(resales, rents, b.name, q.rooms)} />
+          </div>
+          <hr className="divider" />
+          <AreaNewsBlock items={areaNews()} building={b.name} />
+        </>
+      ) : null}
       {tab === "community" ? <Community posts={ILLUSTRATIVE_POSTS} building={b.name} /> : null}
 
       {tab === "update" ? (
       <>
-      <div className="digest" aria-label="Monthly update preview">
+      {/* N1: all numbers in one block; news never sits between number cards. */}
+      <div className="digest" aria-label="Monthly update preview" data-block="numbers">
         <div className="head">
-          <p className="meta">Your monthly update · preview of the email / WhatsApp</p>
-          <h2 style={{ margin: 0 }}>{monthLabel(d.month)}</h2>
+          <p className="meta">Your monthly update · {monthLabel(d.month)}</p>
+          <h2 style={{ margin: 0 }}>The numbers</h2>
         </div>
         {d.order.map((k) => blocks[k])}
+        <section>
+          <div className="between">
+            <h3>Gross yield</h3>
+            <span className="mid">{d.yield.unit != null ? pct(d.yield.unit, 1) : "–"}</span>
+          </div>
+          <p className="meta">
+            {d.rent.ownerRent ? "Your rent" : "Typical new-lease rent here"} / estimated value. JVC flats: {pct(d.yield.jvcMedian, 1)}.
+          </p>
+          <Source kind="ejari" /> <Source kind="estimate" />
+        </section>
+        <MarketMoves items={marketMoves(resales, rents, b.name, q.rooms)} />
         <section className="step">
           <h3>Next step</h3>
           <p>{d.nextStep.title}</p>
@@ -114,25 +136,12 @@ export default async function MyHome({ params, searchParams }: Props) {
         </section>
       </div>
 
-      <Link className="card teaser" href={`/own/${slug}/home?${new URLSearchParams({ ...(sp as Record<string, string>), tab: "news" })}`}>
-        <span className="tiny">News for your home</span>
-        <b>Permit filed for a tower on the plot to the east: view risk for lower east-facing floors</b>
-        <span className="meta">See all news and the likely effect on your price ›</span>
-        <span className="src illustrative">Illustrative example, not a real event</span>
-      </Link>
-
-      <div className="card">
-        <div className="between">
-          <h3>Gross yield</h3>
-          <span className="mid">{d.yield.unit != null ? pct(d.yield.unit, 1) : "–"}</span>
-        </div>
-        <p className="meta">
-          {d.rent.ownerRent ? "Your rent" : "Typical new-lease rent here"} / estimated value. JVC flats: {pct(d.yield.jvcMedian, 1)}.
-        </p>
-        <Source kind="ejari" /> <Source kind="estimate" />
-      </div>
+      <WhatsAppPreview lines={digestMessage(d, b.name, q.unit || "unit", `pf.ae/my-home/${slug}`)} />
 
       <HomePanel id={id} fallback={fallback} estimate={est} marketRent={marketRent} />
+
+      <hr className="divider" />
+      <AreaNewsBlock items={areaNews()} building={b.name} />
       </>
       ) : null}
       <FooterNote />
@@ -257,7 +266,7 @@ const TABS = [
   { id: "community", label: "Owners" },
 ] as const;
 
-function Analysis({ resales, rents, unit, d }: { resales: Parameters<typeof monthlyPerSqm>[0]; rents: Parameters<typeof buildFeed>[1]; unit: { building: string; rooms: number; sizeSqm: number }; d: Digest }) {
+function Analysis({ resales, rents, unit, d }: { resales: Parameters<typeof monthlyPerSqm>[0]; rents: RentRow[]; unit: { building: string; rooms: number; sizeSqm: number }; d: Digest }) {
   const est = estimateValue(resales, unit)!;
   const reading = valuationInsights(resales, rents, unit, est);
   return (

@@ -32,6 +32,31 @@ export interface Home extends OwnerDetails {
   status?: Status;
   statusHistory: { status: Status; at: string }[];
   intent?: Intent;
+  subscription?: Subscription;
+}
+
+/** V11: how the monthly update reaches the owner (mocked delivery). */
+export type Channel = "whatsapp" | "email" | "in_app";
+export type Frequency = "monthly" | "big_changes";
+export interface Subscription {
+  channel: Channel;
+  frequency: Frequency;
+  since: string;
+}
+export const CHANNEL_LABEL: Record<Channel, string> = { whatsapp: "WhatsApp", email: "Email", in_app: "In-app only" };
+export const FREQUENCY_LABEL: Record<Frequency, string> = { monthly: "Every month", big_changes: "Only big changes" };
+
+/** Next digest: the 1st of the month after today. */
+export function nextUpdateDate(today = AS_OF): string {
+  const [y, m] = today.split("-").map(Number);
+  return new Date(Date.UTC(y, m, 1)).toISOString().slice(0, 10);
+}
+
+/** V16: request status after sending (mocked agent): Sent, then Accepted 2 hours later; Viewing is the next step. */
+export type LeadStatus = "sent" | "accepted";
+export const ACCEPT_AFTER_MS = 2 * 60 * 60 * 1000;
+export function leadStatus(createdAt: string, now: string): LeadStatus {
+  return Date.parse(now) - Date.parse(createdAt) >= ACCEPT_AFTER_MS ? "accepted" : "sent";
 }
 
 export type ContactMethod = "call" | "whatsapp" | "email";

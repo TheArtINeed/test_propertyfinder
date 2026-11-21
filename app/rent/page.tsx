@@ -11,6 +11,8 @@ import { DEMO, prefill } from "@/lib/demo";
 import { Track } from "../components/client";
 import { BuildingSelect, FieldError, FooterNote, RoomsSelect, Source, TopBar } from "../ui";
 import { AdviceCard } from "../components/insights";
+import { OwnerConfirmedList, RenterReminders } from "../components/leads";
+import { matchOwnerConfirmed, MATCH_WINDOW_DAYS } from "@/lib/renter";
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -32,6 +34,7 @@ export default async function Rent({ searchParams }: Props) {
   const rate = q.rate ?? EXAMPLE_RATE;
   const rvb = est && ok ? rentVsBuy(est.mid, q.annualRent!, rate) : null;
   const owners = ok ? ownerConfirmedUnits() : [];
+  const matches = matchOwnerConfirmed(owners, q.errors.end ? null : q.leaseEnd);
   const buyHref = `/buy?b=${b.slug}&rooms=${q.rooms}&size=${q.sizeSqm ?? ""}`;
 
   return (
@@ -139,23 +142,20 @@ export default async function Rent({ searchParams }: Props) {
         </div>
       ) : null}
 
+      {ok && watch ? <RenterReminders leaseEnd={q.errors.end ? null : q.leaseEnd} building={b.name} /> : null}
+
       {owners.length ? (
         <div className="card">
-          <Track name="owner_confirmed_viewed" props={{ count: owners.length }} />
+          <Track name="owner_confirmed_viewed" props={{ count: owners.length, matched: matches.filter((m) => m.matched).length }} />
           <h3>Owner-confirmed units nearby</h3>
           <p className="meta">The owner told PF the unit is free from this date. No stale listings.</p>
-          <ul className="list">
-            {owners.map((o) => (
-              <li key={o.id}>
-                <span>
-                  <span className="badge ok">Owner-confirmed</span> {roomsLabel(o.bedrooms)}, {o.sizeSqm} m²
-                  <span className="meta"> · from {dateLabel(o.availableFrom)}</span>
-                </span>
-                <span>{aed(o.annualRent, { compact: true })}/yr</span>
-              </li>
-            ))}
-          </ul>
-          <p className="tiny">Sample units (synthetic data).</p>
+          <p className="meta">
+            {matches.some((m) => m.matched)
+              ? `Units that free up within ${MATCH_WINDOW_DAYS} days of your lease end come first.`
+              : "Add your lease end to see units that free up when you move."}
+          </p>
+          <OwnerConfirmedList units={matches} leaseEnd={q.leaseEnd} />
+          <p className="tiny" style={{ marginTop: 8 }}>Sample units (synthetic data). Tap a unit to request a viewing.</p>
         </div>
       ) : null}
 

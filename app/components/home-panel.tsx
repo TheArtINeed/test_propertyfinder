@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { aed, dateLabel, roundEstimate } from "@/lib/format";
 import {
   addLead, buildLead, deleteAllData, getHome, getLeads, removeHome, saveHome, setIntent, setStatus,
@@ -12,6 +12,8 @@ import { AS_OF } from "@/lib/types";
 import { track } from "@/lib/track";
 import { checkLeaseEnd, checkRent } from "@/lib/sanity";
 import { FieldError } from "../ui";
+import { ILLUSTRATIVE_AGENT } from "@/lib/agents";
+import { CHANNEL_LABEL, FREQUENCY_LABEL, leadStatus, nextUpdateDate, type Channel, type Frequency } from "@/lib/owner";
 import { DEMO } from "@/lib/demo";
 import { homeUrl } from "./client";
 
@@ -36,6 +38,12 @@ export function HomePanel({ id, fallback, estimate, marketRent }: Props) {
   const [saved, setSaved] = useState(false);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [sheet, setSheet] = useState<null | "lead" | "status" | "delete">(null);
+  const statusSeen = useRef(false);
+  const [now, setNow] = useState(() => new Date().toISOString());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date().toISOString()), 60_000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     const s = store();
@@ -169,20 +177,23 @@ export function HomePanel({ id, fallback, estimate, marketRent }: Props) {
         ) : null}
       </div>
 
+      <SubscriptionCard home={home} onChange={(sub) => persist({ ...home, subscription: sub })} />
+
       {leads.length ? (
-        <div className="card">
+        <div className="card" ref={(el) => { if (el && !statusSeen.current) { statusSeen.current = true; track("lead_status_viewed", { requests: leads.length }); } }}>
           <h3>My requests</h3>
           <ul className="list">
             {leads.map((l) => (
-              <li key={l.id}>
+              <li key={l.id} style={{ flexDirection: "column", gap: 6 }}>
                 <span>
                   {l.intent === "sell" ? "Sell" : "Rent out"} · {aed(l.askingPrice, { compact: true })}
                   <span className="meta"> · from {dateLabel(l.availableFrom)}</span>
                 </span>
-                <span className="badge">Sent to agent</span>
+                <LeadSteps status={leadStatus(l.createdAt, now)} />
               </li>
             ))}
           </ul>
+          <p className="tiny">To {ILLUSTRATIVE_AGENT.name}, {ILLUSTRATIVE_AGENT.agency}. Agent and replies are illustrative.</p>
         </div>
       ) : null}
 
@@ -388,7 +399,9 @@ function LeadSheet({
           <div className="empty">
             <div className="icon" aria-hidden>✓</div>
             <h2>Request sent</h2>
-            <p className="meta">A verified agent will contact you by {sent.contact === "whatsapp" ? "WhatsApp" : sent.contact} via PF.</p>
+            <p className="meta">
+              {ILLUSTRATIVE_AGENT.name} will contact you by {sent.contact === "whatsapp" ? "WhatsApp" : sent.contact} via PF. Track it in “My requests”: Sent → Accepted (within 2 hours) → Viewing.
+            </p>
             <p className="tiny">Prototype: nothing was sent. The request is saved under “My requests”.</p>
             <button className="btn" onClick={onClose}>Done</button>
           </div>
@@ -422,7 +435,20 @@ function LeadSheet({
                 </button>
               ))}
             </div>
-            <div className="card tint" style={{ marginTop: 16 }}>
+            <div className="card flat agent" style={{ marginTop: 16 }}>
+              <p className="tiny">Who gets your request</p>
+              <div className="row">
+                <span className="avatar" aria-hidden>A</span>
+                <div>
+                  <b>{ILLUSTRATIVE_AGENT.name}</b>{" "}
+                  {ILLUSTRATIVE_AGENT.superAgent ? <span className="badge">SuperAgent</span> : null}
+                  <div className="meta">{ILLUSTRATIVE_AGENT.agency} · {ILLUSTRATIVE_AGENT.dealsHere}</div>
+                  <div className="meta">{ILLUSTRATIVE_AGENT.responseTime}</div>
+                </div>
+              </div>
+              <span className="src illustrative">Illustrative: PF would pick the top agent by deals in your building</span>
+            </div>
+            <div className="card tint" style={{ marginTop: 8 }}>
               <h3>The agent will receive</h3>
               <ul className="list meta">
                 <li><span>Unit</span><span>{home.building} · {home.unitNumber}</span></li>
@@ -446,6 +472,64 @@ function LeadSheet({
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+const STEPS = ["Sent", "Accepted", "Viewing"] as const;
+
+/** V16: Sent -> Accepted (2 h, mocked) -> Viewing (next). */
+export function LeadSteps({ status }: { status: "sent" | "accepted" }) {
+  const done = status === "sent" ? 1 : 2;
+  return (
+    <ol className="steps-inline" aria-label={`Status: ${status}`}>
+      {STEPS.map((st, i) => (
+        <li key={st} className={i < done ? "done" : i === done ? "next" : ""}>
+          {i < done ? "✓ " : ""}
+          {st}
+          {st === "Accepted" && status === "sent" ? " · within 2 h" : ""}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** V11: channel and frequency of the monthly update, changeable here (closes O7). */
+function SubscriptionCard({ home, onChange }: { home: Home; onChange: (s: NonNullable<Home["subscription"]>) => void }) {
+  const [edit, setEdit] = useState(false);
+  const sub = home.subscription;
+  return (
+    <div className="card" id="subscription">
+      <div className="between">
+        <h3>Your monthly update</h3>
+        <button className="linkbtn" onClick={() => setEdit((e) => !e)}>{edit ? "Done" : sub ? "Change" : "Turn on"}</button>
+      </div>
+      {sub ? (
+        <p className="meta">
+          {CHANNEL_LABEL[sub.channel]} · {FREQUENCY_LABEL[sub.frequency]} · next update {dateLabel(nextUpdateDate())}
+        </p>
+      ) : (
+        <p className="meta">Not on yet: choose how to get it.</p>
+      )}
+      {edit ? (
+        <>
+          <div className="chips" role="group" aria-label="Channel">
+            {(Object.keys(CHANNEL_LABEL) as Channel[]).map((c) => (
+              <button key={c} className="chip" aria-pressed={sub?.channel === c} onClick={() => { onChange({ channel: c, frequency: sub?.frequency ?? "monthly", since: sub?.since ?? AS_OF }); track("digest_subscribed", { channel: c, frequency: sub?.frequency ?? "monthly" }); }}>
+                {CHANNEL_LABEL[c]}
+              </button>
+            ))}
+          </div>
+          <div className="chips" role="group" aria-label="Frequency" style={{ marginTop: 8 }}>
+            {(Object.keys(FREQUENCY_LABEL) as Frequency[]).map((f) => (
+              <button key={f} className="chip" aria-pressed={sub?.frequency === f} onClick={() => { onChange({ channel: sub?.channel ?? "whatsapp", frequency: f, since: sub?.since ?? AS_OF }); track("digest_subscribed", { channel: sub?.channel ?? "whatsapp", frequency: f }); }}>
+                {FREQUENCY_LABEL[f]}
+              </button>
+            ))}
+          </div>
+        </>
+      ) : null}
+      <p className="tiny">Delivery is simulated in this prototype.</p>
     </div>
   );
 }

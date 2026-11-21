@@ -20,6 +20,13 @@ export const EVENT_NAMES = [
   "feed_opened",
   "post_reacted",
   "insight_opened",
+  "digest_subscribed",
+  "renter_reminder_set",
+  "renter_lead_submitted",
+  "lead_status_viewed",
+  "mortgage_lead_submitted",
+  "buyer_lead_submitted",
+  "news_opened",
 ] as const;
 
 export type EventName = (typeof EVENT_NAMES)[number];

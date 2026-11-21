@@ -1,6 +1,6 @@
 # Dev spec: PropWorth "My Home" prototype
 
-Status: draft v6, 2026-11-21 (v4 review changes: section 11; v5 demo prefill: section 12; v6 sanity checks: section 13). Scope = what we build in the timed task (~3 h). Business framing will live in `ONE-PAGER.md` (to be written). Support cases are detailed in `prep/support_cases_spec.md`; section 9 here is the single list of all cases with v2 priorities.
+Status: draft v8, 2026-11-21 (v4 review changes: section 11; v5 demo prefill: section 12; v6 sanity checks: section 13; v7 return and lead loop, separate news: section 14; v8 review fixes: section 15). Scope = what we build in the timed task (~3 h). Business framing will live in `ONE-PAGER.md` (to be written). Support cases are detailed in `prep/support_cases_spec.md`; section 9 here is the single list of all cases with v2 priorities.
 
 ## 1. Idea in one line
 A resale buyer's search does not end at the key handover: after the PropWorth valuation, the unit becomes **"My Home"**, and every month the owner gets a **digest** tied to money that moves anyway (rent in, mortgage out): rents and deals in the building, demand for a unit like theirs, and one next step. The owner sets an **intent** ("rent out from / open to offers from X / not now"), which becomes a qualified lead for agents and an **"owner-confirmed"** signal for renters.
@@ -63,6 +63,8 @@ Units saved in `localStorage` (no login). Plain English, no pitch text or instru
 ## 6. Events (for the test and the data section)
 `POST /api/events` (console + in-memory) and `localStorage`: `unit_claimed`, `valuation_viewed`, `get_monthly_clicked` (valuation -> digest conversion), `digest_opened`, `session_started` (with months since claim: the base of month-2 retention), `deal_list_opened`, `owner_estimate_entered`, `intent_set` (type, date, price), `lead_submitted`, `rent_checked`, `break_calc_viewed`, `owner_confirmed_viewed`, `rent_vs_buy_viewed`, `bought_this`. No real storage.
 
+v7 adds `digest_subscribed` (channel, frequency), `renter_reminder_set`, `renter_lead_submitted` (unit, matched yes / no), `lead_status_viewed`, `mortgage_lead_submitted`, `buyer_lead_submitted`, `news_opened` (item, real / illustrative). **Funnel for the one number** (test on 1% of owners): `valuation_viewed` -> `digest_subscribed` -> `session_started` in month 2 -> `intent_set` -> `lead_submitted`.
+
 ## 7. LLM (optional, last)
 One OpenAI call phrases the digest in 2 sentences from computed numbers only (numbers passed in, never generated). Deterministic template fallback when the key is missing or the call fails. Skip if time is short.
 
@@ -91,7 +93,7 @@ One list of every case: core flows from this spec plus support cases from `prep/
 | O10 | **Monthly digest preview** (new) | Rents, deals, demand (mocked), capital, one next step; empty months still show rents | P0 |
 | O4 | "I think it's worth" (owner's own value) | Unchanged; also data for the model | P1 |
 | O5 | Add another property ("My homes") | Investors often own several units | P1 |
-| O7 | Notification settings | = digest settings: monthly / only big changes / off; channel email / WhatsApp; in-app inbox of what would be sent | P1 |
+| O7 | Notification settings | = digest settings: monthly / only big changes / off; channel email / WhatsApp; in-app inbox of what would be sent | P0 (v7, via V11) |
 | O9 | Remove a property, delete my data | Unchanged | P1 |
 
 **Renter (mandatory)**
@@ -104,7 +106,7 @@ One list of every case: core flows from this spec plus support cases from `prep/
 | R7 | **Owner-confirmed units in my building** (new) | Static card: units whose owner set "rent out from date" (synthetic listings), badge + date | P0 |
 | R4 | Renter to owner: rent vs buy | Monthly payment vs rent for the same size, link to `/buy` (the renter -> owner link the brief asks for) | P0 |
 | R6 | **Break / move at renewal / negotiate** (new) | Payback calculator, "terms depend on your contract" | P1 |
-| R5 | Contact about an owner-confirmed listing | Call / WhatsApp / email, mocked, confirmation | P1 |
+| R5 | Contact about an owner-confirmed listing | Call / WhatsApp / email, mocked, confirmation. v7: done by V15 | P0 (v7) |
 
 **Buyer -> owner (thesis entry)**
 
@@ -194,3 +196,71 @@ Inputs must be plausible for a JVC home, not only "a positive number". One set o
 
 - Deep links: out-of-range URL values (e.g. `paid=10000000000`) are ignored, as if not given, so My Home never shows absurd equity or gains.
 - Acceptance: every rule tested at both bounds; every form shows the message under its field; demo values pass all rules.
+
+## 14. v7: return and lead loop, separate news
+Review after v6: the owner side has content worth coming back for and a working lead, but (1) nothing brings the user back: no channel is chosen, so the digest is a screen, not a monthly touch; (2) the renter and the buyer leave without becoming a lead; (3) the handoff to the agent is a black box; (4) on My Home, news and numbers are mixed, so the numbers are hard to read. Principle: **each of the three users gets a reason to come back and one action that becomes a lead with a visible recipient.** The user-facing pitch on `/` stays (it sells the product to the user; the brief rules out a pitch to the reviewers, which we do not have).
+
+**Return**
+
+| ID | Change | Acceptance | Priority |
+|---|---|---|---|
+| V11 | **Subscribe in the "Get this every month" sheet**: channel (WhatsApp / email / in-app only), frequency (monthly / only big changes), "Next update: 1 Dec 2026" | Save needs a channel; the choice shows on My Home and can be changed there (closes O7); `digest_subscribed` | P0 |
+| V12 | **Digest as a WhatsApp message preview**: 3 lines + link to My Home, next to the screen preview | Same numbers as the digest; tested | P0 |
+| V13 | **Renter: "Remind me before renewal"** (90 and 30 days) and "Watch rents in my building" (monthly) | Lease end saved on the device; `renter_reminder_set`; mocked delivery | P0 |
+
+**Leads and handoff**
+
+| ID | Change | Acceptance | Priority |
+|---|---|---|---|
+| V14 | **Renter match**: owner-confirmed units free within +-30 days of the renter's lease end go first, tagged "Free when your lease ends" | Pure function, tested at the window bounds | P0 |
+| V15 | **Owner-confirmed card is clickable** -> "Request a viewing" sheet (channel, move-in date, consent) -> lead to the owner's agent | `renter_lead_submitted`; confirmation screen | P0 |
+| V16 | **"Who gets your request"** in the owner lead sheet: top agent by deals in this building (illustrative: name, SuperAgent, response time); after sending, status in "My requests": Sent -> Accepted (2 h) -> Viewing | Labelled "Illustrative"; `lead_status_viewed` | P0 |
+| V17 | **Buyer next step** under the bank gap: "Get mortgage pre-approval" (PF mortgages lead) and "Ask an agent about this unit" | `mortgage_lead_submitted`, `buyer_lead_submitted`; mocked | P1 |
+
+**Fixes and layout**
+
+| ID | Change | Acceptance | Priority |
+|---|---|---|---|
+| F1 | **Next-step rule order**: lease already ended -> "Re-let now" wins over "consider a discount at renewal" | Tested: ended lease + rent above market -> re-let | P0 |
+| F3 | **Building select**: the pilot building + one disabled line "Other JVC buildings: coming soon" instead of 90 options; search still lists them as unavailable | Select has at most 2 options; tested | P1 |
+| N1 | **News is its own block, apart from the numbers.** The Update tab keeps the numbers in one block (value, rent, deals, demand, capital, yield, next step); building and area news sits below it in a separate block with its own heading ("Building and area news"), its own look (light tint, news icon) and a divider, never between number cards | No news item renders inside the numbers block; tested by block order |  P0 |
+| N2 | **Two kinds of news, never mixed**: "Market moves" (from DLD / Ejari: top deal, new 2026 high, deal count, new leases) stay with the numbers, as numbers; "Building and area news" (project and editorial items: planned tower, school, road works, service charge budget) live only in the news block. Each item: date, source, impact tag on price (up / down / neutral, icon + word, not color alone); illustrative items labelled "Illustrative example, not a real event" | News tab has the same two sections with headings; tested that every item has date, source, impact and the right label | P0 |
+
+- Not real (README): agents and their status, reminders and message delivery, mortgage and buyer leads, editorial news.
+- Cut order if short of time: F1 -> V11, V12 -> N1, N2 -> V14, V15 -> V13 -> V16 -> V17, F3. Never cut V11 (return), V15 (renter -> owner link) and N1 (readable numbers).
+
+
+## 15. v8: review fixes (first screen, consistent numbers, renter reach)
+Review after v7. Build after v7 is done; do not mix with the v7 work in progress. Items 5 and 6 change calculation logic, so their tests are updated on purpose (say so in the commit).
+
+**Brief compliance**
+
+| ID | Change | Acceptance | Priority |
+|---|---|---|---|
+| W1 | **"I rent" on the first screen**: a second button next to "Check my home's value"; the "Not an owner?" block stays at the bottom (`app/page.tsx`) | Renter entry visible without scrolling at 375 x 812; tested | P0 |
+| W2 | **No reviewer copy in the UI**: remove "Why it works" lines from `/entry-points` (screen sketches stay); move them to README "Where My Home would appear" | No "Why it works" text in the app; README has the list | P0 |
+
+**Numbers that must not contradict each other**
+
+| ID | Change | Acceptance | Priority |
+|---|---|---|---|
+| W5 | **Outlook on the same window as momentum**: JVC trend = May-Jul vs Aug-Oct (rolling 3-month medians), annualised, then the v3 range rules (+-5 pp, extra -5 pp supply risk, clamp -20% / +15%). Today's Jan-Mar base sits on a high January and pins the outlook at the lower clamp while the readings say "Good" (`lib/market.ts`, `outlook`) | Outlook and momentum readings use the same months; the range is not pinned to a clamp on the snapshot; tests updated (logic change) | P0 |
+| W6 | **No month-on-month value change** in the digest (monthly noise, already ruled out above): show the change over 3 months or drop the line (`lib/digest.ts`, capital) | Digest has no "vs last month" value line; tested | P0 |
+| W7 | **Collapse same-day bulk deals**: resales on the same day, same price and same size count as one comp; in deal lists they show once with "same-day bulk deal (N units)" (`lib/market.ts`). Today three identical 29 Oct deals at AED 1,319,425 push the estimate to the top of its range | Estimate sits inside its range on the snapshot; dedupe tested on fixtures | P0 |
+
+**Renter flow**
+
+| ID | Change | Acceptance | Priority |
+|---|---|---|---|
+| W8 | **Open all JVC buildings to renters**: Ejari data covers JVC and the JVC fallback already works; the one-building pilot stays for owners only (`app/rent/page.tsx`). Owner-confirmed units and matching (V14, V15) stay on the pilot building; other buildings show "No owner-confirmed units here yet" | Any JVC building gives a Rent watch result (building or JVC level, labelled); tested | P0 |
+| W9 | **Demo lease end 31 Mar 2027** (was 15 Feb 2027, so the 90-day notice date had already passed) (`lib/demo.ts`) | Demo shows a notice date in the future; tested | P0 |
+
+**Small fixes**
+
+| ID | Change | Acceptance | Priority |
+|---|---|---|---|
+| W10 | Buyer advice: "about AED 1.29M", not "about AED 1290K" (`lib/insights.ts`) | One money formatter everywhere; tested | P1 |
+| W11 | Demo asking price AED 1,500,000 to match the ONE-PAGER buyer example (`lib/demo.ts`) | App and ONE-PAGER show the same buyer numbers | P1 |
+| W12 | Sizes in deal lists rounded: "78 m²", not "77.89 m²" | Tested in the formatter | P1 |
+
+Cut order: W1, W2 (brief) -> W7, W5, W6 (numbers) -> W8, W9 -> W10-W12.

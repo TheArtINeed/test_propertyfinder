@@ -9,6 +9,7 @@ import { DEMO, prefill } from "@/lib/demo";
 import { TrackLink } from "../components/client";
 import { BuildingSelect, FieldError, FooterNote, RoomsSelect, Source, TopBar } from "../ui";
 import { AdviceCard } from "../components/insights";
+import { BuyerNextSteps } from "../components/leads";
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -96,6 +97,8 @@ export default async function Buy({ searchParams }: Props) {
             <p className="hint">Example with 80% loan-to-value; plus 4% DLD fee and other costs. Your bank&apos;s valuation decides.</p>
             <Source kind="estimate" />
           </div>
+
+          <BuyerNextSteps asking={q.asking} building={b.name} rooms={q.rooms} />
 
           <div className="card tint">
             <h3>Bought it?</h3>

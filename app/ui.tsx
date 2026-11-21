@@ -87,7 +87,7 @@ export function MissingUnit({ slug }: { slug: string }) {
 
 export function BuildingSelect({ buildings, value }: { buildings: { name: string; slug: string; active: boolean }[]; value?: string }) {
   const active = buildings.filter((b) => b.active);
-  const soon = buildings.filter((b) => !b.active).sort((a, c) => a.name.localeCompare(c.name, "en", { sensitivity: "base" }));
+  const soon = buildings.filter((b) => !b.active);
   return (
     <>
       <label htmlFor="b">Building</label>
@@ -97,13 +97,11 @@ export function BuildingSelect({ buildings, value }: { buildings: { name: string
             {b.name}
           </option>
         ))}
-        <optgroup label="Coming soon">
-          {soon.map((b) => (
-            <option key={b.slug} value={b.slug} disabled>
-              {b.name} · coming soon
-            </option>
-          ))}
-        </optgroup>
+        {soon.length ? (
+          <option value="" disabled>
+            Other JVC buildings: coming soon
+          </option>
+        ) : null}
       </select>
       <p className="hint">The pilot is open for {active.map((b) => b.name).join(", ")}. Other JVC buildings are coming soon.</p>
     </>

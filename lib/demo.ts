@@ -16,8 +16,10 @@ export const DEMO = {
     titleDeed: "DEMO-0001",
     consent: true,
   },
+  subscription: { channel: "whatsapp" as const, frequency: "monthly" as const },
   plans: { rentOutFrom: "2027-02-01" },
   lead: { contact: "whatsapp" as const, consent: true },
+  viewing: { channel: "whatsapp" as const, consent: true },
   renter: { annualRent: 90_000, leaseEnd: "2027-02-15", askedIncreasePct: 10 },
   buyer: { asking: 1_450_000 },
 } as const;
