@@ -51,3 +51,16 @@ export function validateContact(input: { channel: ContactChannel | null; date?: 
   if (!input.consent) e.consent = "Agree to be contacted via PF";
   return e;
 }
+
+/** Days left before the 90-day notice deadline that count as urgent on the renter screen. */
+export const NOTICE_URGENT_DAYS = 30;
+
+/**
+ * Urgency of the 90-day notice deadline: "urgent" when 0-30 days are left, "passed" when it is gone,
+ * null when there is time or no lease end.
+ */
+export function noticeUrgency(daysToNotice: number | null): "urgent" | "passed" | null {
+  if (daysToNotice == null) return null;
+  if (daysToNotice < 0) return "passed";
+  return daysToNotice <= NOTICE_URGENT_DAYS ? "urgent" : null;
+}

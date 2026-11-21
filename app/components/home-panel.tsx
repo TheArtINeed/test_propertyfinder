@@ -130,6 +130,12 @@ export function HomePanel({ id, fallback, estimate, marketRent }: Props) {
             </div>
           </div>
         ) : null}
+        {kind === "rent_out" && marketRent ? (
+          <p className="hint" data-testid="rent-hint">
+            New leases here: median {aed(roundEstimate(marketRent), { compact: true })} a year
+            {home.occupancy === "let" && home.annualRent ? `. You get ${aed(home.annualRent, { compact: true })} now` : ""}.
+          </p>
+        ) : null}
         {kind === "open_to_offers" ? (
           <>
             <label htmlFor="i-price">Offers from, AED</label>

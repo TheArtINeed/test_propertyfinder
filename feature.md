@@ -88,3 +88,11 @@ Description of every feature developed in this project. Add an entry for each ne
 ## Product features overview (doc)
 - Short list of the main product features for owners, renters and buyers, each with a one-line reason why it exists. Mirrored as the Drive doc "PF Challenge - Product Features".
 - Files: `PRODUCT-FEATURES.md`. Docs only, no code.
+
+## User walk-through fixes (U1-U4)
+- U1: the estimate range is at least ±4% around the PropWorth estimate (`MIN_RANGE`), so a skewed P25-P75 never puts the estimate on the range edge and the month's top deal falls inside it.
+- U2: two named yields: the valuation reading says it uses the median new-lease rent in the building; My Home shows the yield on the owner's rent plus "on today's new-lease rent", so the 6.2% and 7.4% no longer look like a contradiction.
+- U3: renewal risk for owners whose rent is more than 10% above new leases: red warning in the Rent block (`renewalRiskNote`), next step "Lease ends soon and your rent is above new leases: plan the re-let at market rent", and a hint under the re-let rent ("New leases here: median ... You get ... now").
+- U4: renters see an alert card on top of the results when 0-30 days are left before the 90-day notice deadline (`noticeUrgency`).
+- Files: `lib/market.ts`, `lib/digest.ts`, `lib/insights.ts`, `lib/renter.ts`, `app/own/[building]/home/page.tsx`, `app/components/home-panel.tsx`, `app/rent/page.tsx`.
+- Tests: `tests/app/v10.test.tsx`.

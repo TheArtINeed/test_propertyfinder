@@ -12,7 +12,7 @@ import { Track } from "../components/client";
 import { BuildingSelect, FieldError, FooterNote, RoomsSelect, Source, TopBar } from "../ui";
 import { AdviceCard } from "../components/insights";
 import { OwnerConfirmedList, RenterReminders } from "../components/leads";
-import { matchOwnerConfirmed, MATCH_WINDOW_DAYS } from "@/lib/renter";
+import { matchOwnerConfirmed, MATCH_WINDOW_DAYS, noticeUrgency } from "@/lib/renter";
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -84,6 +84,18 @@ export default async function Rent({ searchParams }: Props) {
         <div className="card warn">
           <h3>No similar new leases found</h3>
           <p className="meta">Check the size: we compare units within ±15% of yours.</p>
+        </div>
+      ) : null}
+
+      {renewal && renewal.noticeDeadline && noticeUrgency(renewal.daysToNotice) === "urgent" ? (
+        <div className="card warn" data-testid="notice-urgent" role="alert">
+          <h3>
+            {renewal.daysToNotice === 0 ? "Last day" : `${renewal.daysToNotice} ${renewal.daysToNotice === 1 ? "day" : "days"} left`} for renewal notice
+          </h3>
+          <p>
+            Any change to your lease, including the rent, needs 90 days&apos; notice: by {dateLabel(renewal.noticeDeadline)}. Agree the new rent with your
+            landlord before then.
+          </p>
         </div>
       ) : null}
 

@@ -35,7 +35,8 @@ export interface Digest {
   deals: { all: SaleRow[]; likeYours: SaleRow[]; rollingPerSqm: number | null };
   demand: Demand;
   capital: Capital & { low: number; high: number; changeVs3m: number | null };
-  yield: { unit: number | null; jvcMedian: number };
+  /** unit: on the owner's rent if let, else on market rent; market: on the median new-lease rent in the building. */
+  yield: { unit: number | null; market: number | null; jvcMedian: number };
   nextStep: NextStep;
   order: ("rent" | "deals" | "demand" | "capital")[];
 }
@@ -55,12 +56,26 @@ export function nextStep(input: {
   if (input.daysToLeaseEnd != null && input.daysToLeaseEnd < 0)
     return { kind: "relet", title: "Your lease has ended: re-let now", illustrative: false };
   if (input.daysToLeaseEnd != null && input.daysToLeaseEnd <= RELET_DAYS)
-    return { kind: "relet", title: "Lease ends soon: set your re-let plan", illustrative: false };
+    return input.ownerGap != null && input.ownerGap > RENEWAL_RISK_GAP
+      ? { kind: "relet", title: "Lease ends soon and your rent is above new leases: plan the re-let at market rent", illustrative: false }
+      : { kind: "relet", title: "Lease ends soon: set your re-let plan", illustrative: false };
   if (input.ownerGap != null && input.ownerGap > RENEWAL_RISK_GAP)
     return { kind: "renewal_risk", title: "Your rent is above new leases: consider a discount at renewal", illustrative: false };
   if (input.demandHigh && input.unitYield != null && input.unitYield < input.jvcYield)
     return { kind: "open_to_offers", title: "Demand is high and your yield is below JVC: open to offers?", illustrative: true };
   return { kind: "keep", title: "Nothing urgent this month. Tell us your plans when they change", illustrative: false };
+}
+
+/**
+ * Warning for an owner whose rent is more than RENEWAL_RISK_GAP above new leases: the tenant can move
+ * for less, so the rent is at risk at renewal. Null when the rent is close to the market.
+ */
+export function renewalRiskNote(ownerRent: number | null, marketMedian: number, leaseCount: number): string | null {
+  if (ownerRent == null || leaseCount === 0 || marketMedian <= 0) return null;
+  const gap = (ownerRent - marketMedian) / marketMedian; // same formula as the digest ownerGap
+  if (gap <= RENEWAL_RISK_GAP) return null;
+  const diff = Math.round((ownerRent - marketMedian) / 1000);
+  return `New tenants pay about AED ${diff}K a year less for units like yours. At renewal your tenant may ask for a lower rent or move out: plan for a re-let near AED ${Math.round(marketMedian / 1000)}K.`;
 }
 
 /** JVC median gross yield for flats: median new-lease rent per sqm / median resale price per sqm. */
@@ -106,8 +121,8 @@ export function buildDigest(
 
   // Yield on the building's rent level for the size band (all of 2026, new leases).
   const buildingNew = rents.filter((r) => r.project === unit.building && r.version === "New" && inBand(r, unit.sizeSqm));
-  const rentLevel = ownerRent ?? (buildingNew.length ? rentStats(buildingNew).median : null);
-  const unitYield = rentLevel != null ? grossYield(rentLevel, est.mid) : null;
+  const marketYield = buildingNew.length ? grossYield(rentStats(buildingNew).median, est.mid) : null;
+  const unitYield = ownerRent != null ? grossYield(ownerRent, est.mid) : marketYield;
   const jvc = jvcYield(resales, rents, month);
 
   const order: Digest["order"] =
@@ -119,7 +134,7 @@ export function buildDigest(
     deals: { all, likeYours, rollingPerSqm: est.perSqm },
     demand,
     capital: { ...cap, low: est.low, high: est.high, changeVs3m: prev ? est.mid / prev.mid - 1 : null },
-    yield: { unit: unitYield, jvcMedian: jvc },
+    yield: { unit: unitYield, market: marketYield, jvcMedian: jvc },
     nextStep: nextStep({ daysToLeaseEnd, ownerGap, demandHigh: demand.level === "high", unitYield, jvcYield: jvc }),
     order,
   };

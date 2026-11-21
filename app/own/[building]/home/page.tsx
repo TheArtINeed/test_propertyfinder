@@ -6,7 +6,7 @@ import { areaNews, ILLUSTRATIVE_POSTS, marketMoves } from "@/lib/news";
 import { ReadingCard } from "../../../components/insights";
 import { PriceChart } from "../../../components/price-chart";
 import { AreaNewsBlock, Community, MarketMoves, NewsList, WhatsAppPreview } from "../../../components/feed";
-import { buildDigest, digestMessage, RELET_DAYS, type Digest } from "@/lib/digest";
+import { buildDigest, digestMessage, RELET_DAYS, renewalRiskNote, type Digest } from "@/lib/digest";
 import { findBuilding, pricePerSqm } from "@/lib/market";
 import { homeId, parseUnitQuery, type Home } from "@/lib/owner";
 import { filterRents, renewalCheck, rentStats, reraIndexProxy } from "@/lib/rent";
@@ -114,14 +114,7 @@ export default async function MyHome({ params, searchParams }: Props) {
         </div>
         {d.order.map((k) => blocks[k])}
         <section>
-          <div className="between">
-            <h3>Gross yield</h3>
-            <span className="mid">{d.yield.unit != null ? pct(d.yield.unit, 1) : "–"}</span>
-          </div>
-          <p className="meta">
-            {d.rent.ownerRent ? "Your rent" : "Typical new-lease rent here"} / estimated value. JVC flats: {pct(d.yield.jvcMedian, 1)}.
-          </p>
-          <Source kind="ejari" /> <Source kind="estimate" />
+          <YieldBlock d={d} />
         </section>
         <MarketMoves items={marketMoves(resales, rents, b.name, q.rooms)} />
         <section className="step">
@@ -183,6 +176,14 @@ function RentBlock({
           {rera ? ` At renewal the rent can go up by at most ${pct(rera.maxIncrease)} (RERA index proxy ${aed(rera.indexRent, { compact: true })}).` : ""}
         </p>
       ) : null}
+      {(() => {
+        const risk = renewalRiskNote(d.rent.ownerRent, s.median, s.count);
+        return risk ? (
+          <p className="neg" data-testid="renewal-risk">
+            {risk}
+          </p>
+        ) : null;
+      })()}
       {days != null && leaseEnd ? (
         <p className="meta">
           Lease ends {dateLabel(leaseEnd)}:{" "}
@@ -192,6 +193,24 @@ function RentBlock({
       <Source kind="ejari" />
       {rera ? <> <Source kind="rera" /></> : null}
     </section>
+  );
+}
+
+/** Gross yield: the owner's own rent and the market rent are both shown and named, so it matches the valuation page. */
+function YieldBlock({ d }: { d: Digest }) {
+  const own = d.rent.ownerRent != null;
+  return (
+    <>
+      <div className="between">
+        <h3>Gross yield</h3>
+        <span className="mid">{d.yield.unit != null ? pct(d.yield.unit, 1) : "–"}</span>
+      </div>
+      <p className="meta" data-testid="yield-note">
+        {own ? "On your rent" : "On the median new-lease rent here"} / PropWorth estimate.
+        {own && d.yield.market != null ? ` On today's new-lease rent: ${pct(d.yield.market, 1)}.` : ""} JVC flats: {pct(d.yield.jvcMedian, 1)}.
+      </p>
+      <Source kind="ejari" /> <Source kind="estimate" />
+    </>
   );
 }
 
@@ -288,12 +307,7 @@ function Analysis({ resales, rents, unit, d }: { resales: Parameters<typeof mont
         <Source kind="dld" />
       </div>
       <div className="card">
-        <div className="between">
-          <h3>Gross yield</h3>
-          <span className="mid">{d.yield.unit != null ? pct(d.yield.unit, 1) : "–"}</span>
-        </div>
-        <p className="meta">JVC flats: {pct(d.yield.jvcMedian, 1)}.</p>
-        <Source kind="ejari" /> <Source kind="estimate" />
+        <YieldBlock d={d} />
       </div>
     </>
   );

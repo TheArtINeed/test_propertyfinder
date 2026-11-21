@@ -146,7 +146,7 @@ export function valuationInsights(resales: SaleRow[], rents: RentRow[], unit: Un
       id: "yield",
       tone,
       title: tone === "good" ? "Rents high for the price" : tone === "watch" ? "Rents low for the price" : "Typical rental yield",
-      detail: `Gross yield ${(y * 100).toFixed(1)}% vs ${(jy * 100).toFixed(1)}% for JVC flats.`,
+      detail: `Gross yield ${(y * 100).toFixed(1)}% at the median new-lease rent in your building vs ${(jy * 100).toFixed(1)}% for JVC flats.`,
       action:
         tone === "watch"
           ? "You pay for the building's premium in yield: it suits capital growth or living in, less pure income."

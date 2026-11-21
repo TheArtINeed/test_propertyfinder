@@ -136,23 +136,30 @@ export function confidenceOf(comps: Comps): Confidence {
 }
 
 export interface Estimate {
-  low: number; // P25
+  low: number; // min(P25, mid -4%)
   mid: number; // median
-  high: number; // P75
+  high: number; // max(P75, mid +4%)
   perSqm: number;
   comps: Comps;
   confidence: Confidence;
 }
 
-/** Median AED/sqm of comps x unit size; range P25-P75. Null when there are no comps at all. */
+/**
+ * Minimum half-width of the range around the estimate. With skewed comps the median can sit on P75
+ * (e.g. 1.29M in 1.21M-1.295M), which reads as an error and puts ordinary deals "above the range".
+ */
+export const MIN_RANGE = 0.04;
+
+/** Median AED/sqm of comps x unit size; range P25-P75, widened to at least +-4% around the estimate. Null when there are no comps at all. */
 export function estimateValue(resales: SaleRow[], unit: Unit, month = DIGEST_MONTH): Estimate | null {
   const comps = findComps(resales, unit, month);
   if (comps.rows.length === 0) return null;
   const psm = comps.rows.map(pricePerSqm);
+  const mid = median(psm) * unit.sizeSqm;
   return {
-    low: quantile(psm, 0.25) * unit.sizeSqm,
-    mid: median(psm) * unit.sizeSqm,
-    high: quantile(psm, 0.75) * unit.sizeSqm,
+    low: Math.min(quantile(psm, 0.25) * unit.sizeSqm, mid * (1 - MIN_RANGE)),
+    mid,
+    high: Math.max(quantile(psm, 0.75) * unit.sizeSqm, mid * (1 + MIN_RANGE)),
     perSqm: median(psm),
     comps,
     confidence: confidenceOf(comps),
