@@ -25,3 +25,9 @@ Description of every feature developed in this project. Add an entry for each ne
 - `GET /api/health` reports whether the OpenAI key is set (never its value). `?live=1` checks the OpenAI key via a model-list call that uses no tokens.
 - Files: `app/`, `lib/health.ts`, `app/api/health/route.ts`.
 - Tests: `tests/app/health.test.ts` (Vitest, `npm test`).
+
+## Real DLD data for JVC (1 Jan - 20 Nov 2026)
+- Snapshot of public Dubai Land Department open data for Jumeirah Village Circle, 1 Jan - 20 Nov 2026 (the open-data endpoints only serve the current calendar year): sales transactions (community C-82, ready and off-plan) and Ejari rent contracts (land area 441, Al Barsha South Fourth = JVC). Rows slimmed to the fields the prototype needs; `synthetic: false`.
+- Known gaps: in rent contracts the room count is almost always empty and the building is empty for ~28% of rows, so rents are compared by size and, where possible, by building.
+- Files: `dataset/fetch_dld.py` (fetcher, re-run with `python3 -m dataset.fetch_dld`), `dataset/dld_jvc_sales.json`, `dataset/dld_jvc_rents.json`.
+- Tests: `tests/test_fetch_dld.py` (date chunks, payloads, field mapping, pagination, sanity checks on the snapshot: every month of the period, counts, JVC price and rent bands).
