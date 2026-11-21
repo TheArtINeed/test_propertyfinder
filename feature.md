@@ -130,3 +130,9 @@ Description of every feature developed in this project. Add an entry for each ne
 
 ## Reset demo (`docs/SPEC.md` section 23, R1)
 - "Reset demo" link in the footer of every page and a clean link `/?reset=1`: deletes everything the prototype saved on the device (local and session storage, `pf.*` keys only) and opens the first screen. Files: `app/components/reset.tsx`. Tests: `tests/app/dom_reset.test.tsx`.
+
+## Several contact channels, all preselected (V11 amended)
+- Monthly update, "Find an agent", viewing request, mortgage and agent requests: chips are multi-select and start with every channel on; at least one stays on. Leads keep `contacts` (all chosen) next to `contact` (first). Helpers `toggleIn`, `contactsLabel` in `lib/owner.ts`. Tests: `tests/app/dom_channels.test.tsx`, `tests/app/dom_contacts.test.tsx`.
+
+## Market move impact (N2 amended)
+- `dataNews` in `lib/news.ts`: deal count ±20% vs the usual month, new-lease rents ±3% vs the 3 months before, top deal vs the owner's estimate range -> Up / Down / Neutral; shown as coloured pills. Tests: `tests/app/news_impact.test.ts`.

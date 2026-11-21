@@ -18,10 +18,10 @@ export const DEMO = {
     fixedRateEnd: "2027-04-30",
     consent: true,
   },
-  subscription: { channel: "whatsapp" as const, frequency: "monthly" as const },
+  subscription: { channels: ["whatsapp", "email", "in_app"] as ("whatsapp" | "email" | "in_app")[], frequency: "monthly" as const },
   plans: { rentOutFrom: "2027-02-01" },
-  lead: { contact: "whatsapp" as const, consent: true },
-  viewing: { channel: "whatsapp" as const, consent: true },
+  lead: { contact: "whatsapp" as const, contacts: ["whatsapp", "call", "email"] as ("whatsapp" | "call" | "email")[], consent: true },
+  viewing: { channel: "whatsapp" as const, channels: ["whatsapp", "call", "email"] as ("whatsapp" | "call" | "email")[], consent: true },
   renter: { annualRent: 90_000, leaseEnd: "2027-02-28", askedIncreasePct: 10 },
   buyer: { asking: 1_500_000 },
 } as const;

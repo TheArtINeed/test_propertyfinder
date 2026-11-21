@@ -9,13 +9,9 @@ import { aed, dateLabel, roomsLabel } from "@/lib/format";
 import { DEMO } from "@/lib/demo";
 import { AS_OF } from "@/lib/types";
 import { track } from "@/lib/track";
+import { CONTACT_LABEL, CONTACT_ORDER, contactsLabel, toggleIn } from "@/lib/owner";
 import { FieldError } from "../ui";
 
-const CHANNELS: [ContactChannel, string][] = [
-  ["whatsapp", "WhatsApp"],
-  ["call", "Call"],
-  ["email", "Email"],
-];
 
 /** Generic mocked lead sheet: channel, optional date, consent -> confirmation (V15, V17). */
 export function ContactSheet({
@@ -39,7 +35,8 @@ export function ContactSheet({
   onSent?: () => void;
   onClose: () => void;
 }) {
-  const [channel, setChannel] = useState<ContactChannel | null>(DEMO.viewing.channel);
+  const [channels, setChannels] = useState<ContactChannel[]>(DEMO.viewing.channels);
+  const channel: ContactChannel | null = channels[0] ?? null;
   const [date, setDate] = useState(defaultDate ?? "");
   const [consent, setConsent] = useState<boolean>(DEMO.viewing.consent);
   const [errors, setErrors] = useState<ReturnType<typeof validateContact>>({});
@@ -49,7 +46,7 @@ export function ContactSheet({
     const e = validateContact({ channel, date, needsDate: !!dateLabelText, consent });
     setErrors(e);
     if (Object.keys(e).length) return;
-    track(event, { ...props, channel });
+    track(event, { ...props, channel: channels.join("+") });
     onSent?.();
     setSent(true);
   }
@@ -61,7 +58,7 @@ export function ContactSheet({
           <div className="empty">
             <div className="icon" aria-hidden>✓</div>
             <h2>Request sent</h2>
-            <p className="meta">{recipient} will contact you by {CHANNELS.find(([c]) => c === channel)![1]} via PF.</p>
+            <p className="meta">{recipient} will contact you by {contactsLabel(channels)} via PF.</p>
             <p className="tiny">Prototype: nothing was sent.</p>
             <button className="btn" onClick={onClose}>Done</button>
           </div>
@@ -72,11 +69,11 @@ export function ContactSheet({
               <button className="linkbtn" onClick={onClose} aria-label="Close">✕</button>
             </div>
             <div className="card tint">{summary}</div>
-            <label>How should we contact you?</label>
+            <label>How can we contact you? (choose one or more)</label>
             <div className="chips" role="group" aria-label="Channel">
-              {CHANNELS.map(([c, l]) => (
-                <button key={c} className="chip" aria-pressed={channel === c} onClick={() => setChannel(c)}>
-                  {l}
+              {CONTACT_ORDER.map((c) => (
+                <button key={c} className="chip" aria-pressed={channels.includes(c)} onClick={() => setChannels((l) => toggleIn(l, c, CONTACT_ORDER))}>
+                  {CONTACT_LABEL[c]}
                 </button>
               ))}
             </div>

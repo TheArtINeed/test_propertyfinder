@@ -39,11 +39,35 @@ export interface Home extends OwnerDetails {
 export type Channel = "whatsapp" | "email" | "in_app";
 export type Frequency = "monthly" | "big_changes";
 export interface Subscription {
-  channel: Channel;
+  /** V11 amended: any combination, at least one. */
+  channels: Channel[];
+  /** Older saves had a single channel; read through `channelsOf`. */
+  channel?: Channel;
   frequency: Frequency;
   since: string;
 }
-export const CHANNEL_LABEL: Record<Channel, string> = { whatsapp: "WhatsApp", email: "Email", in_app: "In-app only" };
+export const CHANNEL_LABEL: Record<Channel, string> = { whatsapp: "WhatsApp", email: "Email", in_app: "In-app" };
+const CHANNEL_ORDER = Object.keys(CHANNEL_LABEL) as Channel[];
+
+/** Channels of a subscription, including older single-channel saves. */
+export function channelsOf(sub: Pick<Subscription, "channels" | "channel"> | undefined | null): Channel[] {
+  if (!sub) return [];
+  if (sub.channels?.length) return sub.channels;
+  return sub.channel ? [sub.channel] : [];
+}
+
+/** Adds or removes one channel; the last one cannot be removed. Keeps a fixed order. */
+/** Multi-select chips: add or remove one option, keep the fixed order; the last one can't be removed. */
+export function toggleIn<T>(list: readonly T[], c: T, order: readonly T[]): T[] {
+  if (list.includes(c)) return list.length > 1 ? list.filter((x) => x !== c) : [...list];
+  return order.filter((x) => x === c || list.includes(x));
+}
+
+export function toggleChannel(list: Channel[], c: Channel): Channel[] {
+  return toggleIn(list, c, CHANNEL_ORDER);
+}
+
+export const channelsLabel = (list: Channel[]) => list.map((c) => CHANNEL_LABEL[c]).join(" + ");
 /** A3: events first; the monthly update is the fallback. */
 export const FREQUENCY_LABEL: Record<Frequency, string> = { monthly: "Monthly update + important events", big_changes: "Only important events" };
 
@@ -61,6 +85,13 @@ export function leadStatus(createdAt: string, now: string): LeadStatus {
 }
 
 export type ContactMethod = "call" | "whatsapp" | "email";
+export const CONTACT_LABEL: Record<ContactMethod, string> = { whatsapp: "WhatsApp", call: "Call", email: "Email" };
+export const CONTACT_ORDER = Object.keys(CONTACT_LABEL) as ContactMethod[];
+/** "WhatsApp, call or email". */
+export function contactsLabel(list: readonly ContactMethod[]): string {
+  const w = list.map((c, i) => (i === 0 ? CONTACT_LABEL[c] : c === "whatsapp" ? "WhatsApp" : c));
+  return w.length < 2 ? (w[0] ?? "") : `${w.slice(0, -1).join(", ")} or ${w[w.length - 1]}`;
+}
 
 export interface Lead {
   id: string;
@@ -74,6 +105,7 @@ export interface Lead {
   estimate: { low: number; mid: number; high: number };
   availableFrom: string;
   contact: ContactMethod;
+  contacts: ContactMethod[];
   verification: Home["verification"];
   consent: true;
   createdAt: string;
@@ -81,7 +113,7 @@ export interface Lead {
 
 export const LEAD_FIELDS = [
   "id", "homeId", "building", "unitNumber", "rooms", "sizeSqm", "intent", "askingPrice",
-  "estimate", "availableFrom", "contact", "verification", "consent", "createdAt",
+  "estimate", "availableFrom", "contact", "contacts", "verification", "consent", "createdAt",
 ] as const;
 
 export interface LeadDraft {
@@ -89,6 +121,7 @@ export interface LeadDraft {
   askingPrice?: number | null;
   availableFrom?: string | null;
   contact?: ContactMethod | null;
+  contacts?: ContactMethod[];
   consent?: boolean;
 }
 
@@ -132,7 +165,7 @@ export function validateIntent(i: { kind: IntentKind; date: string; price: strin
   return e;
 }
 
-export function buildLead(home: Home, d: Required<LeadDraft>, estimate: Lead["estimate"], now: string): Lead {
+export function buildLead(home: Home, d: Required<Omit<LeadDraft, "contacts">> & Pick<LeadDraft, "contacts">, estimate: Lead["estimate"], now: string): Lead {
   if (validateLead(d).length) throw new Error("invalid lead");
   return {
     id: `lead-${home.id}-${now}`,
@@ -146,6 +179,7 @@ export function buildLead(home: Home, d: Required<LeadDraft>, estimate: Lead["es
     estimate,
     availableFrom: d.availableFrom!,
     contact: d.contact!,
+    contacts: d.contacts?.length ? d.contacts : [d.contact!],
     verification: home.verification,
     consent: true,
     createdAt: now,

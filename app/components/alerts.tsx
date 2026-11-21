@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Alert } from "@/lib/alerts";
-import { getHome } from "@/lib/owner";
+import { channelsOf, getHome } from "@/lib/owner";
 import { track } from "@/lib/track";
 import { Icon } from "../icons";
 
@@ -87,7 +87,7 @@ export function AlertsInbox({ alerts, homeId, limit }: { alerts: Alert[]; homeId
   const [channel, setChannel] = useState<Channel>("push");
   useEffect(() => {
     try {
-      const sub = getHome(localStorage, homeId)?.subscription?.channel;
+      const sub = channelsOf(getHome(localStorage, homeId)?.subscription)[0];
       if (sub === "whatsapp" || sub === "email") setChannel(sub);
     } catch {
       /* storage blocked */

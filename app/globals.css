@@ -350,3 +350,18 @@ input[aria-invalid="true"] { border-color: var(--error); }
 .golden { font-size: 13px; line-height: 19px; margin: 6px 0; padding: 8px 10px; border-radius: 10px; background: var(--indigo-100); }
 .unit-card.taken { cursor: default; opacity: .6; background: var(--bg); }
 .reset-link { color: var(--text-2); text-decoration: underline; white-space: nowrap; }
+
+/* Post-save banner: status as text, the two actions as distinct buttons (they merged into one green line on a phone) */
+.saved-banner.stacked { color: var(--text); gap: 10px; }
+.saved-banner.stacked b { color: #00794a; }
+.saved-actions { gap: 8px; }
+.saved-actions a, .saved-actions .linkbtn {
+  display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: 9999px;
+  background: var(--surface); border: 1px solid #9ad9b9; color: #00794a; font-size: 14px; font-weight: 600; text-decoration: none;
+}
+
+/* N2 amended: the impact on price reads as a labelled pill, neutral included */
+.impact { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; padding: 2px 10px; border-radius: 9999px; font-size: 12px; line-height: 18px; font-weight: 600; white-space: normal; }
+.impact.up { background: var(--success-bg); color: #00794a; }
+.impact.down { background: var(--error-bg); color: var(--error); }
+.impact.neutral { background: var(--pill); color: var(--text-2); }

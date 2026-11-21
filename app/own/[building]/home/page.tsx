@@ -114,7 +114,7 @@ export default async function MyHome({ params, searchParams }: Props) {
           <div className="card" data-block="numbers">
             <h2>Market moves</h2>
             <p className="meta">Numbers from registered deals and leases in {b.name}.</p>
-            <NewsList items={marketMoves(resales, rents, b.name, q.rooms)} />
+            <NewsList items={marketMoves(resales, rents, b.name, q.rooms, DIGEST_MONTH, { low: d.capital.low, high: d.capital.high })} />
           </div>
           <hr className="divider" />
           <AreaNewsBlock items={areaNews()} building={b.name} />

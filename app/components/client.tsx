@@ -10,7 +10,7 @@ import type { EventName } from "@/lib/events";
 import { searchBuildings, type Building } from "@/lib/market";
 import { aed, pct, roomsLabel, roundEstimate } from "@/lib/format";
 import type { Portfolio } from "@/lib/portfolio";
-import { CHANNEL_LABEL, FREQUENCY_LABEL, getHomes, homeId, nextUpdateDate, saveHome, type Channel, type Frequency, type Home, JUST_SAVED_KEY, nextFreeUnit, afterSavePath } from "@/lib/owner";
+import { CHANNEL_LABEL, FREQUENCY_LABEL, getHomes, homeId, nextUpdateDate, saveHome, type Channel, type Frequency, type Home, JUST_SAVED_KEY, nextFreeUnit, afterSavePath, toggleChannel } from "@/lib/owner";
 import { dateLabel } from "@/lib/format";
 import { AS_OF, SQFT_PER_SQM } from "@/lib/types";
 import { hasErrors, validateClaim, validateUnitForm, type ClaimErrors, type FieldErrors } from "@/lib/forms";
@@ -346,7 +346,7 @@ export function GetMonthly({ ctx, prefillPaid, from }: { ctx: UnitCtx; prefillPa
   const [deed, setDeed] = useState<string>(DEMO.owner.titleDeed);
   const [consent, setConsent] = useState<boolean>(DEMO.owner.consent);
   const [unitNo, setUnitNo] = useState(ctx.unitNumber || DEMO.unit);
-  const [channel, setChannel] = useState<Channel>(DEMO.subscription.channel);
+  const [channels, setChannels] = useState<Channel[]>(DEMO.subscription.channels);
   const [frequency, setFrequency] = useState<Frequency>(DEMO.subscription.frequency);
   const [errors, setErrors] = useState<ClaimErrors>({});
   const clear = (k: keyof ClaimErrors) => setErrors((x) => ({ ...x, [k]: undefined }));
@@ -376,14 +376,14 @@ export function GetMonthly({ ctx, prefillPaid, from }: { ctx: UnitCtx; prefillPa
       leaseEnd: occ === "let" ? leaseEnd : null,
       pricePaid: num(paid),
       loan: num(loan),
-      subscription: { channel, frequency, since: AS_OF },
+      subscription: { channels, frequency, since: AS_OF },
     };
     try {
       saveHome(localStorage, home);
     } catch {
       /* storage blocked: the URL still carries the unit */
     }
-    track("digest_subscribed", { channel, frequency, building: ctx.building });
+    track("digest_subscribed", { channel: channels.join("+"), frequency, building: ctx.building });
     track("unit_claimed", { building: ctx.building, rooms: ctx.rooms, verification: home.verification, occupancy: occ });
     try {
       sessionStorage.setItem(JUST_SAVED_KEY, home.id); // P10: My Home confirms it went into PropWorth
@@ -418,10 +418,10 @@ export function GetMonthly({ ctx, prefillPaid, from }: { ctx: UnitCtx; prefillPa
               </button>
             </div>
             <p className="meta">Get your PropWorth every month in My Home.</p>
-            <label>Send my update by</label>
+            <label>Send my update by (choose one or more)</label>
             <div className="chips" role="group" aria-label="Channel">
               {(Object.keys(CHANNEL_LABEL) as Channel[]).map((c) => (
-                <button key={c} type="button" className="chip" aria-pressed={channel === c} onClick={() => setChannel(c)}>
+                <button key={c} type="button" className="chip" aria-pressed={channels.includes(c)} onClick={() => setChannels((l) => toggleChannel(l, c))}>
                   {CHANNEL_LABEL[c]}
                 </button>
               ))}

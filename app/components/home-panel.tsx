@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { aed, dateLabel, roundEstimate } from "@/lib/format";
-import { addLead, buildLead, deleteAllData, getHome, getLeads, removeHome, saveHome, setIntent, setStatus, STATUS_LABEL, leadFieldErrors, validateIntent, type ContactMethod, type Home, type IntentKind, type Lead, type Status, updateHome } from "@/lib/owner";
+import { addLead, buildLead, deleteAllData, getHome, getLeads, removeHome, saveHome, setIntent, setStatus, STATUS_LABEL, leadFieldErrors, validateIntent, type ContactMethod, type Home, type IntentKind, type Lead, type Status, updateHome, channelsOf, channelsLabel, toggleChannel, toggleIn, CONTACT_ORDER, CONTACT_LABEL, contactsLabel } from "@/lib/owner";
 import { AS_OF } from "@/lib/types";
 import { track } from "@/lib/track";
 import { checkLeaseEnd, checkRent } from "@/lib/sanity";
@@ -443,7 +443,8 @@ function LeadSheet({
   const [intent, setIntentKind] = useState<Lead["intent"]>(defaultIntent);
   const [askingPrice, setAsking] = useState(String(Math.round(defaultPrice) || ""));
   const [availableFrom, setFrom] = useState<string>(defaultDate || DEMO.plans.rentOutFrom);
-  const [contact, setContact] = useState<ContactMethod | null>(DEMO.lead.contact);
+  const [contacts, setContacts] = useState<ContactMethod[]>(DEMO.lead.contacts);
+  const contact: ContactMethod | null = contacts[0] ?? null;
   const [consent, setConsent] = useState<boolean>(DEMO.lead.consent);
   const [sent, setSent] = useState<Lead | null>(null);
   // Each intent has its own demo price: a rent per year vs a sale price.
@@ -452,7 +453,7 @@ function LeadSheet({
     setIntentKind(k);
     setAsking(String(Math.round(k === defaultIntent ? defaultPrice : k === "sell" ? roundEstimate(estimate.mid) : rentDefault)));
   }
-  const draft = { intent, askingPrice: Number(askingPrice), availableFrom, contact, consent };
+  const draft = { intent, askingPrice: Number(askingPrice), availableFrom, contact, contacts, consent };
   const fieldErrors = leadFieldErrors(draft);
   const errors = Object.values(fieldErrors);
 
@@ -461,7 +462,7 @@ function LeadSheet({
     const lead = buildLead(home, draft as Required<typeof draft>, estimate, new Date().toISOString());
     onSent(lead);
     setSent(lead);
-    track("lead_submitted", { intent, contact: contact!, price: draft.askingPrice, verification: home.verification });
+    track("lead_submitted", { intent, contact: contacts.join("+"), price: draft.askingPrice, verification: home.verification });
   }
 
   return (
@@ -472,7 +473,7 @@ function LeadSheet({
             <div className="icon" aria-hidden>✓</div>
             <h2>Request sent</h2>
             <p className="meta">
-              {ILLUSTRATIVE_AGENT.name} will contact you by {sent.contact === "whatsapp" ? "WhatsApp" : sent.contact} via PF. Track it in “My requests”: Sent → Accepted (within 2 hours) → Viewing.
+              {ILLUSTRATIVE_AGENT.name} will contact you by {contactsLabel(sent.contacts ?? [sent.contact])} via PF. Track it in “My requests”: Sent → Accepted (within 2 hours) → Viewing.
             </p>
             <p className="tiny">Prototype: nothing was sent. The request is saved under “My requests”.</p>
             <button className="btn" onClick={onClose}>Done</button>
@@ -499,11 +500,11 @@ function LeadSheet({
             {intent === "sell" ? (
               <p className="hint">PropWorth estimate {aed(roundEstimate(estimate.low))} – {aed(roundEstimate(estimate.high))}</p>
             ) : null}
-            <label>How should the agent contact you?</label>
-            <div className="chips">
-              {(["call", "whatsapp", "email"] as const).map((c) => (
-                <button key={c} className="chip" aria-pressed={contact === c} onClick={() => setContact(c)}>
-                  {c === "call" ? "Call" : c === "whatsapp" ? "WhatsApp" : "Email"}
+            <label>How can the agent contact you? (choose one or more)</label>
+            <div className="chips" role="group" aria-label="Contact">
+              {CONTACT_ORDER.map((c) => (
+                <button key={c} className="chip" aria-pressed={contacts.includes(c)} onClick={() => setContacts((l) => toggleIn(l, c, CONTACT_ORDER))}>
+                  {CONTACT_LABEL[c]}
                 </button>
               ))}
             </div>
@@ -578,7 +579,7 @@ function SubscriptionCard({ home, onChange, waLines }: { home: Home; onChange: (
       </div>
       {sub ? (
         <p className="meta">
-          {CHANNEL_LABEL[sub.channel]} · {FREQUENCY_LABEL[sub.frequency]} · next update {dateLabel(nextUpdateDate())}
+          {channelsLabel(channelsOf(sub))} · {FREQUENCY_LABEL[sub.frequency]} · next update {dateLabel(nextUpdateDate())}
         </p>
       ) : (
         <p className="meta">Not on yet: choose how to get it.</p>
@@ -587,14 +588,14 @@ function SubscriptionCard({ home, onChange, waLines }: { home: Home; onChange: (
         <>
           <div className="chips" role="group" aria-label="Channel">
             {(Object.keys(CHANNEL_LABEL) as Channel[]).map((c) => (
-              <button key={c} className="chip" aria-pressed={sub?.channel === c} onClick={() => { onChange({ channel: c, frequency: sub?.frequency ?? "monthly", since: sub?.since ?? AS_OF }); track("digest_subscribed", { channel: c, frequency: sub?.frequency ?? "monthly" }); }}>
+              <button key={c} className="chip" aria-pressed={channelsOf(sub).includes(c)} onClick={() => { const channels = toggleChannel(channelsOf(sub).length ? channelsOf(sub) : [], c); onChange({ channels, frequency: sub?.frequency ?? "monthly", since: sub?.since ?? AS_OF }); track("digest_subscribed", { channel: channels.join("+"), frequency: sub?.frequency ?? "monthly" }); }}>
                 {CHANNEL_LABEL[c]}
               </button>
             ))}
           </div>
           <div className="chips" role="group" aria-label="Frequency" style={{ marginTop: 8 }}>
             {(Object.keys(FREQUENCY_LABEL) as Frequency[]).map((f) => (
-              <button key={f} className="chip" aria-pressed={sub?.frequency === f} onClick={() => { onChange({ channel: sub?.channel ?? "whatsapp", frequency: f, since: sub?.since ?? AS_OF }); track("digest_subscribed", { channel: sub?.channel ?? "whatsapp", frequency: f }); }}>
+              <button key={f} className="chip" aria-pressed={sub?.frequency === f} onClick={() => { const channels = channelsOf(sub).length ? channelsOf(sub) : (["whatsapp"] as Channel[]); onChange({ channels, frequency: f, since: sub?.since ?? AS_OF }); track("digest_subscribed", { channel: channels.join("+"), frequency: f }); }}>
                 {FREQUENCY_LABEL[f]}
               </button>
             ))}

@@ -31,3 +31,13 @@ describe("spec v14 D5: sources are plain text", () => {
     expect(rules[0][2]).toMatch(/border-radius:\s*0/);
   });
 });
+
+describe("post-save banner actions are buttons, not text", () => {
+  it("each action has its own pill with a border and a white background", () => {
+    // The cascade applies the last matching rule.
+    const rule = [...css.matchAll(/\.saved-actions a, \.saved-actions \.linkbtn \{([^}]*)\}/g)].pop()?.[1] ?? "";
+    expect(rule).toMatch(/border-radius:\s*9999px/);
+    expect(rule).toMatch(/border:\s*1px solid/);
+    expect(rule).toMatch(/background:\s*var\(--surface\)/);
+  });
+});

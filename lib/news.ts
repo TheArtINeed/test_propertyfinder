@@ -32,7 +32,18 @@ const lastDay = (month: string) => {
 const MONTH = (m: string) => new Date(m + "-01T00:00:00Z").toLocaleString("en-US", { month: "long", timeZone: "UTC" });
 
 /** News generated from the snapshot for one building and month. */
-export function dataNews(resales: SaleRow[], rents: RentRow[], building: string, rooms: number, month = DIGEST_MONTH): NewsItem[] {
+/** N2 amended thresholds. */
+export const DEAL_COUNT_BAND = 0.2;
+export const RENT_MOVE_BAND = 0.03;
+
+export function dataNews(
+  resales: SaleRow[],
+  rents: RentRow[],
+  building: string,
+  rooms: number,
+  month = DIGEST_MONTH,
+  estimate?: { low: number; high: number } | null,
+): NewsItem[] {
   const out: NewsItem[] = [];
   const b = resales.filter((r) => r.project === building);
   const sameRooms = b.filter((r) => r.rooms === rooms);
@@ -49,8 +60,13 @@ export function dataNews(resales: SaleRow[], rents: RentRow[], building: string,
       tag: "Deals",
       title: record ? `New 2026 high: a ${rooms === 0 ? "studio" : rooms + "BR"} sold for ${k(top.value_aed)}` : `Top deal in ${MONTH(month)}: ${k(top.value_aed)}`,
       body: `${inMonth.length} ${rooms === 0 ? "studios" : rooms + "BR flats"} resold in ${MONTH(month)}. The top one was ${Math.round(top.size_sqm)} m²${top.bulkCount && top.bulkCount > 1 ? ` (same-day bulk deal, ${top.bulkCount} units)` : ""}.`,
-      impact: record ? "up" : "neutral",
-      impactText: record ? "Supports your estimate" : "In line with your range",
+      ...(record
+        ? { impact: "up" as Impact, impactText: "Supports your estimate" }
+        : estimate && top.value_aed > estimate.high
+          ? { impact: "up" as Impact, impactText: "Above your estimate range" }
+          : estimate && top.value_aed < estimate.low
+            ? { impact: "down" as Impact, impactText: "Below your estimate range" }
+            : { impact: "neutral" as Impact, impactText: "In line with your estimate" }),
       kind: "data",
       source: DATA_SOURCE,
     });
@@ -59,15 +75,16 @@ export function dataNews(resales: SaleRow[], rents: RentRow[], building: string,
   const monthDeals = b.filter((r) => monthOf(r.date) === month).length;
   const avgDeals = b.filter((r) => monthOf(r.date) < month).length / Math.max(1, Number(month.slice(5)) - 1);
   if (monthDeals || avgDeals) {
-    const busier = monthDeals > avgDeals * 1.2;
+    const busier = monthDeals > avgDeals * (1 + DEAL_COUNT_BAND) + 1e-9;
+    const quieter = monthDeals < avgDeals * (1 - DEAL_COUNT_BAND) - 1e-9;
     out.push({
       id: `deal-count-${month}`,
       date: lastDay(month),
       tag: "Deals",
-      title: busier ? `Busier month: ${monthDeals} resales` : `${monthDeals} resales in ${MONTH(month)}`,
+      title: busier ? `Busier month: ${monthDeals} resales` : quieter ? `Quieter month: ${monthDeals} resales` : `${monthDeals} resales in ${MONTH(month)}`,
       body: `The 2026 average before ${MONTH(month)} was ${avgDeals.toFixed(1)} a month.`,
-      impact: busier ? "up" : "neutral",
-      impactText: busier ? "More buyers active" : "Normal activity",
+      impact: busier ? "up" : quieter ? "down" : "neutral",
+      impactText: busier ? "More buyers than usual" : quieter ? "Fewer deals than usual" : "Usual activity",
       kind: "data",
       source: DATA_SOURCE,
     });
@@ -76,14 +93,29 @@ export function dataNews(resales: SaleRow[], rents: RentRow[], building: string,
   const br = rents.filter((r) => r.project === building && r.version === "New");
   const brMonth = br.filter((r) => monthOf(r.registered) === month);
   if (brMonth.length) {
+    const m = median(brMonth.map((r) => r.annual_aed));
+    const prevFrom = (() => {
+      const [y, mm] = month.split("-").map(Number);
+      const d = new Date(Date.UTC(y, mm - 1 - 3, 1));
+      return d.toISOString().slice(0, 7);
+    })();
+    const prev = br.filter((r) => monthOf(r.registered) >= prevFrom && monthOf(r.registered) < month).map((r) => r.annual_aed);
+    const change = prev.length ? m / median(prev) - 1 : 0;
+    // Epsilon: 103,000 / 100,000 is a hair above 3% in floating point; exactly 3% stays neutral.
+    const up = change > RENT_MOVE_BAND + 1e-9;
+    const down = change < -RENT_MOVE_BAND - 1e-9;
     out.push({
       id: `rent-${month}`,
       date: lastDay(month),
       tag: "Rents",
       title: `${brMonth.length} new leases signed (all sizes), median ${k(median(brMonth.map((r) => r.annual_aed)))} a year`,
       body: "All sizes, Ejari registrations in the building.",
-      impact: "neutral",
-      impactText: "Sets the rent your tenant compares with",
+      impact: up ? "up" : down ? "down" : "neutral",
+      impactText: up
+        ? `New-lease rents up ${Math.round(change * 100)}% on the 3 months before`
+        : down
+          ? `New-lease rents down ${Math.round(-change * 100)}% on the 3 months before`
+          : "New-lease rents steady on the 3 months before",
       kind: "data",
       source: DATA_SOURCE,
     });
