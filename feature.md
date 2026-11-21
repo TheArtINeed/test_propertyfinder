@@ -127,3 +127,6 @@ Description of every feature developed in this project. Add an entry for each ne
 - H2 taken units for renters: "Let agreed · date" or "No longer for rent", greyed, no viewing button, listed last; a notice when a unit the renter asked to view is taken (`listingState`, `withStates`, `takenRequests` in `lib/renter.ts`).
 - H1 refinance: mortgage details in the Status sheet; next step "Your fixed rate ends in N months: you could save about AED X a month" (or "compare mortgage offers") after the lease rules; "Compare mortgage offers" lead sheet; alerts 6 and 3 months before the fixed rate ends (`refinance` in `lib/finance.ts`, `refiAlert`).
 - Tests: `tests/app/batch_b.test.tsx`, `tests/app/dom_taken.test.tsx`.
+
+## Reset demo (`docs/SPEC.md` section 23, R1)
+- "Reset demo" link in the footer of every page and a clean link `/?reset=1`: deletes everything the prototype saved on the device (local and session storage, `pf.*` keys only) and opens the first screen. Files: `app/components/reset.tsx`. Tests: `tests/app/dom_reset.test.tsx`.

@@ -4,6 +4,7 @@ import { SOURCES } from "@/lib/types";
 import { Icon } from "./icons";
 import { PortfolioPill } from "./components/portfolio";
 import { BackButton } from "./components/back";
+import { ResetDemoLink } from "./components/reset";
 
 export function TopBar({ back, title }: { back?: string; title?: string }) {
   return (
@@ -48,7 +49,7 @@ export function FooterNote() {
   return (
     <p className="footer-note">
       Prototype. Prices and rents: Dubai Land Department open data (resales and Ejari contracts, JVC, 1 Jan – 20 Nov
-      2026). Estimates are not advice. Demand numbers are illustrative.
+      2026). Estimates are not advice. Demand numbers are illustrative. <ResetDemoLink />
     </p>
   );
 }

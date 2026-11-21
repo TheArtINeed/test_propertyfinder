@@ -24,6 +24,7 @@ Python data tests: `python3 -m unittest discover -s tests -t .`
 - **Demo prefill:** every form opens with demo values (`lib/demo.ts`) so you can click straight through; all fields are editable. Consent boxes are pre-ticked only for the demo: a real product never pre-ticks consent.
 - **Return and leads (spec section 14):** owners choose WhatsApp / email / in-app and a frequency when they save their home (changeable on My Home) and see the WhatsApp version of the update; renters get renewal reminders and units that free up when their lease ends, each with a viewing request; buyers get mortgage pre-approval and "ask an agent". Numbers and news never mix: market moves and building news live in the News tab.
 - **Also on My Home:** "How we estimate" (method, what the estimate cannot know, independence line); event alerts as push / WhatsApp / email previews; a Golden Visa line worded to DLD's rule (purchase value of AED 2M+, so "may qualify" only on the price paid); refinance as the next step for owners with a loan. Renters see taken units as "Let agreed".
+- **Reset demo:** the "Reset demo" link in the footer (or `/?reset=1`) clears everything the prototype saved on the device; use it between testers on one phone.
 - **Sanity checks:** inputs must be plausible for a JVC home (rent AED 10K–2M a year, prices AED 100K–50M, loan ≤ price paid, lease end not in the past, dates within 2–5 years); the message shows under the field. Out-of-range values in shared links are ignored.
 
 ## Where My Home would appear

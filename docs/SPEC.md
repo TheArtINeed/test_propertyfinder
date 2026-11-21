@@ -446,3 +446,12 @@ Build note (batch B: G1, H2, H1):
 - Scout answering with My Home: already T10 (`entry-3-scout.png`); no LLM in the prototype.
 
 **README only (known gaps)**: two people claim the same unit (resolved by title deed verification, X1); real sign-in (C5 stays mocked); Arabic and RTL (X4); real partner offers and revenue share.
+
+## 23. v16: reset the demo
+Testers on one device inherit each other's saved homes (data lives in the browser). A time-based reset was rejected: it would break the product's promise that your home stays and brings you back. Instead:
+
+| ID | Change | Acceptance | Priority |
+|---|---|---|---|
+| R1 | **"Reset demo" link** in the footer of every page and a clean link `/?reset=1`: deletes everything the prototype saved on this device (homes, plans, requests, alerts state, event log; same as "Delete all my data") and opens the first screen | After reset: 0 homes, no PropWorth pill, first-screen main button "Get your PropWorth estimate"; tested | P0 |
+
+Not in this step: silent saves from My Home actions (plans, agent request, status) stay as built; an explicit save there is a later change.
