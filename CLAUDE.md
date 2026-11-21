@@ -27,5 +27,10 @@
 - When a test fails, find out why and fix the code first. Do not adjust tests to make them pass.
 - If a change legitimately requires updating tests, say so explicitly, then update them.
 
+## Git and deploy
+- Never commit, push or deploy (including Vercel) without the user's explicit approval for that specific change.
+- Approval covers one change only; ask again for every next commit or push.
+- Before asking, list what will be committed and pushed.
+
 ## Communication
 - Be brief. Keep answers and writing short.
