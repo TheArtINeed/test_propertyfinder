@@ -68,6 +68,6 @@ Real public data: Dubai Land Department resales and Ejari contracts for JVC, 1 J
 - RERA index proxy: **median** of all JVC contracts of the size band (new + renewed). The mean is unusable: Ejari has outliers from AED 50 to AED 9M a year. The official calculator uses DLD's own index; ours is a proxy.
 
 ## Not built
-- **P1** (no entry point yet): break / move / negotiate calculator (R6), notification settings (O7), "I think it's worth" (O4), contact about an owner-confirmed unit (R5), "Something wrong?" report (C4), mock sign-in (C5). "My homes" (O5) is a list on the first screen only.
+- **P1** (no entry point yet): break / move / negotiate calculator (R6), "I think it's worth" (O4), "Something wrong?" report (C4), mock sign-in (C5), one monthly update for all homes (W15). "My homes" (O5) is a list on the first screen only. Notification settings (O7: channel and frequency on My Home) and contact about an owner-confirmed unit (R5: "Request a viewing") are built.
 - **P2**: real title deed verification, real lead delivery, real email / WhatsApp, Arabic and RTL, move-out and deposit, areas beyond JVC and other markets, real PF demand data, Rent in 12, pay-per-deal matching with DLD / Ejari, history before 2026 (needs a Dubai Pulse key).
 - Optional LLM wording of the digest was skipped; everything is deterministic.

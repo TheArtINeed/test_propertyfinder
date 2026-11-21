@@ -96,3 +96,7 @@ Description of every feature developed in this project. Add an entry for each ne
 - U4: renters see an alert card on top of the results when 0-30 days are left before the 90-day notice deadline (`noticeUrgency`).
 - Files: `lib/market.ts`, `lib/digest.ts`, `lib/insights.ts`, `lib/renter.ts`, `app/own/[building]/home/page.tsx`, `app/components/home-panel.tsx`, `app/rent/page.tsx`.
 - Tests: `tests/app/v10.test.tsx`.
+
+## Data and measurement doc
+- `docs/DATA.md`: metric tree (one number, owner / renter / buyer funnels mapped to the prototype's events, valuation quality, revenue), guardrails, data from other PF teams, data handling and infrastructure. Linked from `ONE-PAGER.md`.
+- Tests: `tests/app/data_doc.test.ts` (every event named in the doc exists in `lib/events.ts` and is sent by the app).

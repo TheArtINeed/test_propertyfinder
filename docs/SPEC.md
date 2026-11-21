@@ -1,6 +1,6 @@
 # Dev spec: PropWorth "My Home" prototype
 
-Status: draft v9, 2026-11-21 (v4 review changes: section 11; v5 demo prefill: section 12; v6 sanity checks: section 13; v7 return and lead loop, separate news: section 14; v8 review fixes: section 15; v9 update preview on the valuation: section 16). Scope = what we build in the timed task (~3 h). Business framing will live in `ONE-PAGER.md` (to be written). Support cases are detailed in `prep/support_cases_spec.md`; section 9 here is the single list of all cases with v2 priorities.
+Status: draft v10, 2026-11-21 (v10 as-built audit: section 17; v4 review changes: section 11; v5 demo prefill: section 12; v6 sanity checks: section 13; v7 return and lead loop, separate news: section 14; v8 review fixes: section 15; v9 update preview on the valuation: section 16). Scope = what we build in the timed task (~3 h). Business framing will live in `ONE-PAGER.md` (to be written). Support cases are detailed in `prep/support_cases_spec.md`; section 9 here is the single list of all cases with v2 priorities.
 
 ## 1. Idea in one line
 A resale buyer's search does not end at the key handover: after the PropWorth valuation, the unit becomes **"My Home"**, and every month the owner gets a **digest** tied to money that moves anyway (rent in, mortgage out): rents and deals in the building, demand for a unit like theirs, and one next step. The owner sets an **intent** ("rent out from / open to offers from X / not now"), which becomes a qualified lead for agents and an **"owner-confirmed"** signal for renters.
@@ -283,3 +283,35 @@ News and the monthly update live on My Home (N1), so on the valuation the user d
 | ID | Change | Acceptance | Priority |
 |---|---|---|---|
 | V18 | **"Every month you'll also get" card** above the CTA, 3 lines: (1) one market move from DLD / Ejari (the top deal of the digest month in the building, real), (2) one building and area news headline with its impact on price (icon + word), labelled "Illustrative", (3) the renewal reminder ("a reminder 90 days before your lease ends"). Each line keeps its source label | Card renders above the CTA; line 1 is real data from the same function as My Home's market moves; line 2 carries the Illustrative label; no full news block on the valuation; tested | P0 |
+
+## 17. As built: changes not recorded above, and stale lines
+Added after an audit of `done_log.md` and the code. Where this section and an earlier one disagree, this section wins.
+
+**Built, missing from the spec**
+
+| ID | Change (as built) | Where |
+|---|---|---|
+| T1 | Estimate range is at least +-4% around the estimate, so the estimate never sits on the edge of its range and the month's top deal falls inside it | `lib/market.ts` (`MIN_RANGE`) |
+| T2 | Two yields, named: "on your rent" and "on today's new-lease rent" (plus JVC flats) | My Home, `lib/digest.ts` |
+| T3 | Next-step rule: lease ends soon and the owner's rent is above new leases -> "plan the re-let at market rent" (adds to 4.4.5 and F1) | `lib/digest.ts` |
+| T4 | Renter notice alert: 0-30 days left to the 90-day notice deadline -> urgent alert; deadline gone -> "already passed" | `lib/renter.ts` (`noticeUrgency`), `/rent` |
+| T5 | RERA index proxy uses the **median** of all JVC contracts, not the average: Ejari has outliers (AED 50 to AED 9M a year) | `lib/rent.ts` |
+| T6 | "Find my home" opens with the pilot building prefilled and a highlighted "Continue" card, other buildings below as "coming soon"; bedrooms default to 1BR on `/rent` and `/buy` | `/own`, `/rent`, `/buy` |
+| T7 | Every submit is validated, including an empty form; after a successful check the page scrolls to the results | all forms |
+| T8 | Design pass at 375 px: line icons, compact deal rows and news items, one primary button per screen | `app/` |
+| T9 | `/privacy` "How we use data", linked from consent; "Remove this home" deletes the unit, status, plans and requests (O9 partly built) | `app/privacy`, `home-panel.tsx` |
+| T10 | Entry points beyond the site, static mockups: monthly push / WhatsApp / email, "Did you buy?" on a quiet saved search, Scout answering with My Home, My Home app tab | `docs/mockups/`, README |
+
+**Data findings that shaped the numbers**
+- JVC resale AED/m² fell ~9% from Jan-Mar to Aug-Oct 2026 (same-building check agrees). After W5 the outlook is about -8% to +7%.
+
+**Stale lines (superseded)**
+- Header: `ONE-PAGER.md` is written; `PRODUCT-FEATURES.md` also exists.
+- 3 "buildings with >= 10 resales; others JVC-level": owners -> V2 (one pilot building); renters -> W8 (all JVC).
+- 4.2 range -> plus T1. 4.3 outlook window -> W5. 4.4.4 value change -> W6 (3 months). 4.8 "average" -> T5 (median).
+- V10g renter lease end -> 2027-02-28 (W9 build note). V10h asking price -> AED 1,500,000 (W11).
+- 7 LLM wording: skipped; everything is deterministic.
+
+**Not built (as of v1 hand-in):** R6 break / move / negotiate, O4 "I think it's worth", C4 "Something wrong?", C5 mock sign-in, W15 one digest for all homes, LLM wording. O5 is a list on the first screen only. O7 (channel and frequency on My Home) and R5 ("Request a viewing") are built; README corrected.
+
+Live: https://test-propertyfinder.vercel.app
