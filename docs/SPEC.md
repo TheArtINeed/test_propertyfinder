@@ -264,3 +264,5 @@ Review after v7. Build after v7 is done; do not mix with the v7 work in progress
 | W12 | Sizes in deal lists rounded: "78 m²", not "77.89 m²" | Tested in the formatter | P1 |
 
 Cut order: W1, W2 (brief) -> W7, W5, W6 (numbers) -> W8, W9 -> W10-W12.
+
+Build note (W9): the demo lease end is **28 Feb 2027**, not 31 Mar 2027. With 31 Mar no owner-confirmed unit falls in the +-30-day window (the latest frees up on 30 Jan 2027), so V14 "Free when your lease ends" would disappear from the demo. 28 Feb keeps the goal of W9 (90-day notice date 30 Nov 2026 is in the future) and one match (1BR, free from 30 Jan).

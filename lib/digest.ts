@@ -34,7 +34,7 @@ export interface Digest {
   };
   deals: { all: SaleRow[]; likeYours: SaleRow[]; rollingPerSqm: number | null };
   demand: Demand;
-  capital: Capital & { low: number; high: number; changeVsPrev: number | null };
+  capital: Capital & { low: number; high: number; changeVs3m: number | null };
   yield: { unit: number | null; jvcMedian: number };
   nextStep: NextStep;
   order: ("rent" | "deals" | "demand" | "capital")[];
@@ -84,7 +84,8 @@ export function buildDigest(
 ): Digest | null {
   const est: Estimate | null = estimateValue(resales, unit, month);
   if (!est) return null;
-  const prev = estimateValue(resales, unit, addMonths(month, -1));
+  // W6: no month-on-month change (monthly noise); compare with the estimate 3 months earlier.
+  const prev = estimateValue(resales, unit, addMonths(month, -3));
 
   // 1. Rent: new leases in the building for the size band in M.
   const monthRents = filterRents(rents, { building: unit.building, sizeSqm: unit.sizeSqm, from: month, to: month, version: "New" });
@@ -117,7 +118,7 @@ export function buildDigest(
     rent: { stats, ownerRent, ownerGap, daysToLeaseEnd },
     deals: { all, likeYours, rollingPerSqm: est.perSqm },
     demand,
-    capital: { ...cap, low: est.low, high: est.high, changeVsPrev: prev ? est.mid / prev.mid - 1 : null },
+    capital: { ...cap, low: est.low, high: est.high, changeVs3m: prev ? est.mid / prev.mid - 1 : null },
     yield: { unit: unitYield, jvcMedian: jvc },
     nextStep: nextStep({ daysToLeaseEnd, ownerGap, demandHigh: demand.level === "high", unitYield, jvcYield: jvc }),
     order,

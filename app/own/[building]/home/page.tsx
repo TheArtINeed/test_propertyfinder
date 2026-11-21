@@ -10,7 +10,7 @@ import { buildDigest, digestMessage, RELET_DAYS, type Digest } from "@/lib/diges
 import { findBuilding, pricePerSqm } from "@/lib/market";
 import { homeId, parseUnitQuery, type Home } from "@/lib/owner";
 import { filterRents, renewalCheck, rentStats, reraIndexProxy } from "@/lib/rent";
-import { aed, dateLabel, monthLabel, pct, roomsLabel, roundEstimate } from "@/lib/format";
+import { aed, bulkLabel, dateLabel, monthLabel, pct, roomsLabel, roundEstimate, sqm } from "@/lib/format";
 import { AS_OF, DIGEST_MONTH, type RentRow } from "@/lib/types";
 import { Track } from "../../../components/client";
 import { HomePanel } from "../../../components/home-panel";
@@ -217,12 +217,17 @@ function DealsBlock({ d, rooms }: { d: Digest; rooms: number }) {
       {d.deals.all.length ? (
         <ul className="list meta">
           {d.deals.all.slice(0, 5).map((r) => (
-            <li key={r.id}>
+            <li key={r.id} className="deal">
               <span>
-                {dateLabel(r.date)} · {r.rooms != null ? roomsLabel(r.rooms) : "–"}, {r.size_sqm} m²
+                {dateLabel(r.date)}
+                <span className="meta">
+                  {r.rooms != null ? roomsLabel(r.rooms) : "–"}, {sqm(r.size_sqm)}
+                  {bulkLabel(r.bulkCount)}
+                </span>
               </span>
-              <span>
-                {aed(r.value_aed, { compact: true })} · {aed(pricePerSqm(r), { compact: true })}/m²
+              <span className="price">
+                {aed(r.value_aed, { compact: true })}
+                <span className="meta">{aed(pricePerSqm(r), { compact: true })}/m²</span>
               </span>
             </li>
           ))}
@@ -241,9 +246,9 @@ function CapitalBlock({ d }: { d: Digest }) {
       <h3>Your capital</h3>
       <p>
         Value {aed(roundEstimate(c.low), { compact: true })} – {aed(roundEstimate(c.high), { compact: true })}
-        {c.changeVsPrev != null ? (
+        {c.changeVs3m != null ? (
           <>
-            , <span className={c.changeVsPrev >= 0 ? "pos" : "neg"}>{pct(c.changeVsPrev, 1, true)}</span> vs last month
+            , <span className={c.changeVs3m >= 0 ? "pos" : "neg"}>{pct(c.changeVs3m, 1, true)}</span> over 3 months
           </>
         ) : null}
         .

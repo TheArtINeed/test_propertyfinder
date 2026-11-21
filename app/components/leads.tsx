@@ -206,7 +206,7 @@ export function BuyerNextSteps({ asking, building, rooms }: { asking: number; bu
     <div className="card">
       <h3>Next step</h3>
       <div className="stack">
-        <button className="btn" onClick={() => setOpen("mortgage")}>Get mortgage pre-approval</button>
+        <button className="btn dark" onClick={() => setOpen("mortgage")}>Get mortgage pre-approval</button>
         <button className="btn secondary" onClick={() => setOpen("agent")}>Ask an agent about this unit</button>
       </div>
       {open === "mortgage" ? (

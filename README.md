@@ -23,6 +23,15 @@ Python data tests: `python3 -m unittest discover -s tests -t .`
 - **Return and leads (spec section 14):** owners choose WhatsApp / email / in-app and a frequency when they save their home (changeable on My Home) and see the WhatsApp version of the update; renters get renewal reminders and units that free up when their lease ends, each with a viewing request; buyers get mortgage pre-approval and "ask an agent". On My Home the numbers are one block (with "Market moves" from DLD / Ejari); building and area news is a separate block below.
 - **Sanity checks:** inputs must be plausible for a JVC home (rent AED 10K–2M a year, prices AED 100K–50M, loan ≤ price paid, lease end not in the past, dates within 2–5 years); the message shows under the field. Out-of-range values in shared links are ignored.
 
+## Where My Home would appear
+Hooks on existing Property Finder screens (sketched at `/entry-points`) and why each one works:
+- **Listing page, unit for sale in the building** — "Own a flat in Luma Park Views? See what yours is worth". Owners browse listings in their own building to guess their value. Give them the real number from deals.
+- **Transactions tab, recent deals** — "Own one here? Get deals like this for your unit every month". People who read transactions are already tracking prices. One tap turns a one-off look into a monthly habit.
+- **PropWorth result (today's valuation)** — "Get this every month". The valuation is a one-off today. The monthly update gives a reason to come back.
+- **Account tab in the app** — "My Home: add the home you own". A permanent home in the app for owners, next to their searches.
+- **Rent search results in JVC** — "Already renting in JVC? Check if your rent is fair before renewal". Renters near renewal compare prices here. Answer the question they actually have.
+- **Mortgage calculator on a resale listing** — "Will the bank value it at the price? Check before you offer". Buyers fear a low bank valuation. After the deal the same check becomes their home's value.
+
 ## Data
 Real public data: Dubai Land Department resales and Ejari contracts for JVC, 1 Jan – 20 Nov 2026 (`dataset/`).
 - Resales only: ready units, procedure "Sale" (off-plan, Delayed Sell and lease-to-own excluded).
@@ -30,6 +39,7 @@ Real public data: Dubai Land Department resales and Ejari contracts for JVC, 1 J
 - **Hero building Luma Park Views is newly handed over**: 414 of 415 Ejari contracts are first lettings, so there are no renewals in the building yet; renewal checks use JVC-level contracts.
 - Ejari rarely has bedrooms, so rents are compared by size (±15%).
 - Unit number is stored but not used: DLD open data has no unit numbers.
+- Renters can pick any JVC building (Ejari covers all of JVC); the one-building pilot applies to owners.
 
 ## Real vs mocked
 | Real (DLD / Ejari) | Mocked |
@@ -38,7 +48,9 @@ Real public data: Dubai Land Department resales and Ejari contracts for JVC, 1 J
 
 ## Calculation notes
 - Estimate: median AED/m² of comps in the last 3 months × size, range P25–P75. Fallback: same building any rooms → JVC same rooms; confidence drops to low.
-- Outlook: JVC trend Jan–Mar vs Aug–Oct, annualised; ±5 pp, low end −5 pp more for supply risk; clamped to −20% / +15%. The 2026 data shows prices per m² **down** about 9% over that period, so the outlook is negative.
+- Outlook: JVC trend May–Jul vs Aug–Oct (the same windows as the momentum reading), annualised; ±5 pp, low end −5 pp more for supply risk; clamped to −20% / +15%. On the snapshot: about −8% to +7% a year. (A Jan–Mar base sat on a high January and pinned the range at −20%.)
+- Same-day bulk deals (same date, building, price and size) count as one comparable and show as "same-day bulk deal (N units)".
+- The value change in the monthly update is over 3 months, not month on month (monthly noise).
 - RERA index proxy: **median** of all JVC contracts of the size band (new + renewed). The mean is unusable: Ejari has outliers from AED 50 to AED 9M a year. The official calculator uses DLD's own index; ours is a proxy.
 
 ## Not built

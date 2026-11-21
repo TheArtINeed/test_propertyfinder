@@ -1,6 +1,6 @@
 import { loadSnapshot } from "@/lib/data";
-import { buildingDealsInMonth } from "@/lib/market";
-import { aed } from "@/lib/format";
+import { buildingDealsInMonth, estimateValue } from "@/lib/market";
+import { aed, roundEstimate, sqm } from "@/lib/format";
 import { DIGEST_MONTH, HERO_BUILDING } from "@/lib/types";
 import { TrackLink } from "../components/client";
 import { FooterNote, TopBar } from "../ui";
@@ -9,13 +9,14 @@ const HOME = "/own/luma-park-views";
 
 /**
  * Where My Home plugs into the rest of the site: mock fragments of existing surfaces,
- * each with the hook the user would see and why it is useful to them.
+ * each with the hook the user would see. Why each hook works is in the README (W2: no reviewer copy in the UI).
  */
 export default function EntryPoints() {
   const { resales } = loadSnapshot();
+  const est = estimateValue(resales, { building: HERO_BUILDING, rooms: 1, sizeSqm: 80 })!;
   const deal = buildingDealsInMonth(resales, HERO_BUILDING, DIGEST_MONTH).find((r) => r.rooms === 1);
 
-  const points: { src: string; surface: string; mock: React.ReactNode; hook: string; href: string; why: string }[] = [
+  const points: { src: string; surface: string; mock: React.ReactNode; hook: string; href: string }[] = [
     {
       src: "listing_page",
       surface: "Listing page, unit for sale in the building",
@@ -27,7 +28,6 @@ export default function EntryPoints() {
       ),
       hook: "Own a flat in Luma Park Views? See what yours is worth",
       href: HOME,
-      why: "Owners browse listings in their own building to guess their value. Give them the real number from deals.",
     },
     {
       src: "transactions",
@@ -35,22 +35,20 @@ export default function EntryPoints() {
       mock: deal ? (
         <>
           <b>{aed(deal.value_aed)}</b>
-          <span className="meta">Sold · 1 bed · {deal.size_sqm} m² · Luma Park Views</span>
+          <span className="meta">Sold · 1 bed · {sqm(deal.size_sqm)} · Luma Park Views</span>
         </>
       ) : (
         <b>Recent deals</b>
       ),
       hook: "Own one here? Get deals like this for your unit every month",
       href: HOME,
-      why: "People who read transactions are already tracking prices. One tap turns a one-off look into a monthly habit.",
     },
     {
       src: "propworth_result",
       surface: "PropWorth result (today's valuation)",
-      mock: <b>Your home is worth AED 1.22M – 1.29M</b>,
+      mock: <b>Your home is worth {aed(roundEstimate(est.low), { compact: true })} – {aed(roundEstimate(est.high), { compact: true })}</b>,
       hook: "Get this every month",
       href: `${HOME}/value?unit=1204&rooms=1&size=80`,
-      why: "The valuation is a one-off today. The monthly update gives a reason to come back.",
     },
     {
       src: "account_tab",
@@ -58,7 +56,6 @@ export default function EntryPoints() {
       mock: <b>Saved searches · Alerts · Settings</b>,
       hook: "My Home: add the home you own",
       href: "/own",
-      why: "A permanent home in the app for owners, next to their searches.",
     },
     {
       src: "rent_results",
@@ -66,7 +63,6 @@ export default function EntryPoints() {
       mock: <b>1 bed apartments for rent in JVC · 1,240 results</b>,
       hook: "Already renting in JVC? Check if your rent is fair before renewal",
       href: "/rent",
-      why: "Renters near renewal compare prices here. Answer the question they actually have.",
     },
     {
       src: "mortgage_calculator",
@@ -74,7 +70,6 @@ export default function EntryPoints() {
       mock: <b>Monthly payment AED 5,736</b>,
       hook: "Will the bank value it at the price? Check before you offer",
       href: "/buy?b=luma-park-views&rooms=1&size=80&price=1350000",
-      why: "Buyers fear a low bank valuation. After the deal the same check becomes their home's value.",
     },
   ];
 
@@ -91,9 +86,6 @@ export default function EntryPoints() {
             <span>{p.hook}</span>
             <span aria-hidden>›</span>
           </TrackLink>
-          <p className="meta" style={{ marginTop: 8 }}>
-            <b>Why it works:</b> {p.why}
-          </p>
         </div>
       ))}
       <p className="tiny">Mock screens for the prototype; listing and calculator numbers are examples.</p>

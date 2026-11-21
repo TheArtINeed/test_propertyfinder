@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { loadSnapshot, ownerConfirmedUnits } from "@/lib/data";
-import { activeOrDefault, estimateValue } from "@/lib/market";
+import { activeOrDefault, estimateValue, findBuilding } from "@/lib/market";
 import { hasErrors, parseRentQuery } from "@/lib/forms";
 import { rentAdvice } from "@/lib/insights";
 import { renewalCheck, rentWatch, reraIndexProxy } from "@/lib/rent";
@@ -22,7 +22,9 @@ const RDC_URL = "https://rdc.gov.ae/en/";
 export default async function Rent({ searchParams }: Props) {
   const q = parseRentQuery(await searchParams);
   const { buildings, resales, rents } = loadSnapshot();
-  const b = activeOrDefault(buildings, q.building);
+  // W8: renters can pick any JVC building (Ejari covers all of JVC); the one-building pilot is for owners.
+  const b = (q.building ? findBuilding(buildings, q.building) : undefined) ?? activeOrDefault(buildings, null);
+  const pilot = b.active;
   // A bad mortgage rate must not hide the rent check: it falls back to the example rate (message by the rate field).
   const { rate: rateError, ...blocking } = q.errors;
   const ok = q.submitted && !hasErrors(blocking) && q.sizeSqm && q.annualRent;
@@ -33,7 +35,7 @@ export default async function Rent({ searchParams }: Props) {
   const est = ok ? estimateValue(resales, { building: b.name, rooms: q.rooms, sizeSqm: q.sizeSqm! }) : null;
   const rate = q.rate ?? EXAMPLE_RATE;
   const rvb = est && ok ? rentVsBuy(est.mid, q.annualRent!, rate) : null;
-  const owners = ok ? ownerConfirmedUnits() : [];
+  const owners = ok && pilot ? ownerConfirmedUnits() : [];
   const matches = matchOwnerConfirmed(owners, q.errors.end ? null : q.leaseEnd);
   const buyHref = `/buy?b=${b.slug}&rooms=${q.rooms}&size=${q.sizeSqm ?? ""}`;
 
@@ -45,7 +47,7 @@ export default async function Rent({ searchParams }: Props) {
 
       <form className="card" method="get" action="/rent#results">
         <input type="hidden" name="go" value="1" />
-        <BuildingSelect buildings={buildings} value={b.slug} />
+        <BuildingSelect buildings={buildings} value={b.slug} allOpen />
         <div className="grid2">
           <div>
             <RoomsSelect value={q.rooms} />
@@ -156,6 +158,11 @@ export default async function Rent({ searchParams }: Props) {
           </p>
           <OwnerConfirmedList units={matches} leaseEnd={q.leaseEnd} />
           <p className="tiny" style={{ marginTop: 8 }}>Sample units (synthetic data). Tap a unit to request a viewing.</p>
+        </div>
+      ) : ok && !pilot ? (
+        <div className="card">
+          <h3>Owner-confirmed units</h3>
+          <p className="meta">No owner-confirmed units in {b.name} yet. Owners of Luma Park Views can already confirm when their unit is free.</p>
         </div>
       ) : null}
 

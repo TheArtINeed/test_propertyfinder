@@ -6,6 +6,7 @@ import { DIGEST_MONTH, type RentRow, type SaleRow } from "./types";
 import { addMonths, median, monthRange } from "./stats";
 import { jvcMedianPerSqm, monthOf, pricePerSqm, window3, type Estimate, type Unit } from "./market";
 import { inBand, rentStats } from "./rent";
+import { aed, roundEstimate } from "./format";
 import { jvcYield } from "./digest";
 
 export type Tone = "good" | "watch" | "neutral";
@@ -169,16 +170,16 @@ export function valuationInsights(resales: SaleRow[], rents: RentRow[], unit: Un
     });
   }
 
-  // 6. Market direction.
-  const jFirst = jvcMedianPerSqm(resales, "2026-03");
-  const ytd = jNow / jFirst - 1;
+  // 6. Market direction: same windows as the momentum reading and the outlook (W5).
+  const jPrevMkt = jvcMedianPerSqm(resales, prev);
+  const chg = jNow / jPrevMkt - 1;
   insights.push({
     id: "market",
-    tone: ytd < -0.03 ? "watch" : ytd > 0.03 ? "good" : "neutral",
-    title: ytd < -0.03 ? "JVC prices are softening" : ytd > 0.03 ? "JVC prices are rising" : "JVC prices are flat",
-    detail: `JVC flats: AED ${Math.round(jNow).toLocaleString("en-US")} per m² in Aug–Oct vs ${Math.round(jFirst).toLocaleString("en-US")} in Jan–Mar (${pp(ytd)}).`,
+    tone: chg < -0.02 ? "watch" : chg > 0.02 ? "good" : "neutral",
+    title: chg < -0.02 ? "JVC prices are softening" : chg > 0.02 ? "JVC prices are rising" : "JVC prices are flat",
+    detail: `JVC flats: AED ${Math.round(jNow).toLocaleString("en-US")} per m² in ${windowLabel(window3(month))} vs ${Math.round(jPrevMkt).toLocaleString("en-US")} in ${windowLabel(window3(prev))} (${pp(chg)}).`,
     action:
-      ytd < -0.03
+      chg < -0.02
         ? "Selling within a year? Compare any offer with recent deals, not last year's prices. Holding and letting? Rent matters more than price."
         : "Your value follows the market: we will flag big moves.",
     source: "dld",
@@ -253,7 +254,7 @@ export function buyAdvice(asking: number, est: { low: number; mid: number; high:
       tone: "watch",
       title: "Above recent deals: room to negotiate",
       detail: "Most similar units sold for less in the last 3 months.",
-      action: `Offer near the top of the range (about AED ${Math.round(est.high / 5000) * 5}K) and ask the agent which deals justify the price.`,
+      action: `Offer near the top of the range (about ${aed(roundEstimate(est.high), { compact: true })}) and ask the agent which deals justify the price.`,
     };
   if (asking < est.low)
     return {

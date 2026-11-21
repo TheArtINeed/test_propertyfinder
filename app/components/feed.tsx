@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { IMPACT_WORD, type NewsItem, type Post } from "@/lib/news";
 import { track } from "@/lib/track";
+import { Icon } from "../icons";
 
 const IMPACT = { up: "▲", down: "▼", neutral: "•" } as const;
 const date = (iso: string) => new Date(iso + "T00:00:00Z").toLocaleString("en-US", { day: "numeric", month: "short", timeZone: "UTC" });
@@ -13,15 +14,13 @@ function NewsItemView({ n }: { n: NewsItem }) {
     <li className={`news ${n.kind}`}>
       <details onToggle={(e) => (e.currentTarget as HTMLDetailsElement).open && track("news_opened", { item: n.id, real: n.kind === "data" })}>
         <summary>
-          <span className="between">
-            <span className="tiny">
-              {n.tag} · {date(n.date)}
-            </span>
-            <span className={`impact ${n.impact}`}>
-              <span aria-hidden>{IMPACT[n.impact]}</span> {IMPACT_WORD[n.impact]}: {n.impactText}
-            </span>
+          <span className="tiny">
+            {n.tag} · {date(n.date)}
           </span>
           <b className="news-title">{n.title}</b>
+          <span className={`impact ${n.impact}`}>
+            <span aria-hidden>{IMPACT[n.impact]}</span> {IMPACT_WORD[n.impact]}: {n.impactText}
+          </span>
         </summary>
         <p className="meta">{n.body}</p>
       </details>
@@ -57,7 +56,7 @@ export function AreaNewsBlock({ items, building }: { items: NewsItem[]; building
   return (
     <section className="news-block" data-block="news" aria-label="Building and area news">
       <h2>
-        <span aria-hidden>📰</span> Building and area news
+        <Icon name="news" size={22} /> Building and area news
       </h2>
       <p className="meta">What is planned around {building} and how it may affect your price.</p>
       <NewsList items={items} />

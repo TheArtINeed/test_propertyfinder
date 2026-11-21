@@ -10,6 +10,8 @@ export interface SaleRow {
   rooms: number | null; // 0 = studio
   size_sqm: number;
   value_aed: number;
+  /** W7: units in a same-day bulk deal (same date, project, price, size) collapsed into this row. */
+  bulkCount?: number;
 }
 
 export interface RentRow {

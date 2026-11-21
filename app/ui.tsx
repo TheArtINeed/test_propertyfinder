@@ -1,19 +1,20 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { SOURCES } from "@/lib/types";
+import { Icon } from "./icons";
 
 export function TopBar({ back, title }: { back?: string; title?: string }) {
   return (
     <header className="topbar">
       {back ? (
         <Link className="iconbtn" href={back} aria-label="Back">
-          ‹
+          <Icon name="back" />
         </Link>
       ) : null}
       {title ? <span className="title">{title}</span> : <span className="brand">Property Finder · My Home</span>}
       {title ? (
         <Link className="iconbtn" href="/" aria-label="Home">
-          ⌂
+          <Icon name="home" />
         </Link>
       ) : null}
     </header>
@@ -85,7 +86,31 @@ export function MissingUnit({ slug }: { slug: string }) {
   );
 }
 
-export function BuildingSelect({ buildings, value }: { buildings: { name: string; slug: string; active: boolean }[]; value?: string }) {
+export function BuildingSelect({
+  buildings,
+  value,
+  allOpen,
+}: {
+  buildings: { name: string; slug: string; active: boolean }[];
+  value?: string;
+  allOpen?: boolean;
+}) {
+  if (allOpen) {
+    const sorted = [...buildings].sort((a, c) => Number(c.active) - Number(a.active) || a.name.localeCompare(c.name, "en", { sensitivity: "base" }));
+    return (
+      <>
+        <label htmlFor="b">Building</label>
+        <select id="b" name="b" defaultValue={value || sorted[0]?.slug}>
+          {sorted.map((b) => (
+            <option key={b.slug} value={b.slug}>
+              {b.name}
+            </option>
+          ))}
+        </select>
+        <p className="hint">Any JVC building: rents come from Ejari contracts across JVC.</p>
+      </>
+    );
+  }
   const active = buildings.filter((b) => b.active);
   const soon = buildings.filter((b) => !b.active);
   return (

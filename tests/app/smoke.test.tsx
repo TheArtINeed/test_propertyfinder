@@ -37,7 +37,7 @@ describe("smoke: every route renders for the hero building and has a next action
     const h = await html(<EntryPoints />);
     expect(h).toContain("Transactions tab");
     expect(h).toContain('href="/rent"');
-    expect(h).toContain("Why it works");
+    expect(h).not.toContain("Why it works"); // spec v8 W2: reviewer copy moved to README
   });
 
   it("inactive buildings show 'coming soon', not a valuation (V2)", async () => {

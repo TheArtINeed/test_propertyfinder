@@ -46,7 +46,7 @@ describe("every form opens prefilled and editable", () => {
     const h = await html(Rent(sp({})));
     expect(val(h, "size")).toBe("80");
     expect(val(h, "rent")).toBe("90000");
-    expect(val(h, "end")).toBe("2027-02-15");
+    expect(val(h, "end")).toBe("2027-02-28"); // spec v8 W9 (see section 15 note)
     expect(val(h, "ask")).toBe("10");
     expect(h).toMatch(/<option value="1" selected="">1 bedroom/);
     expect(h).toMatch(/<option value="luma-park-views" selected="">/);
@@ -69,7 +69,7 @@ describe("every form opens prefilled and editable", () => {
   it("/buy: size and asking price", async () => {
     const h = await html(Buy(sp({})));
     expect(val(h, "size")).toBe("80");
-    expect(val(h, "price")).toBe("1450000");
+    expect(val(h, "price")).toBe("1500000"); // spec v8 W11: matches the ONE-PAGER buyer example
     expect(h).not.toContain("Fair price");
   });
 

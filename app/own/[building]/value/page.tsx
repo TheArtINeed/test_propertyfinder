@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { loadSnapshot } from "@/lib/data";
-import { monthlyPerSqm, valuationInsights } from "@/lib/insights";
+import { monthlyPerSqm, valuationInsights, windowLabel } from "@/lib/insights";
 import { ReadingCard } from "../../../components/insights";
 import { PriceChart } from "../../../components/price-chart";
 import { estimateValue, findBuilding, outlook, pricePerSqm, type CompLevel } from "@/lib/market";
 import { parseUnitQuery } from "@/lib/owner";
-import { aed, dateLabel, pct, roomsLabel, roundEstimate } from "@/lib/format";
+import { aed, bulkLabel, dateLabel, pct, roomsLabel, roundEstimate, sqm } from "@/lib/format";
 import { DealList, GetMonthly, Track } from "../../../components/client";
 import { BuildingNotFound, ComingSoon, Empty, FooterNote, MissingUnit, Source, TopBar } from "../../../ui";
 
@@ -66,7 +66,9 @@ export default async function Valuation({ params, searchParams }: Props) {
         <p className="meta">Estimated value today</p>
         <div className="big">{aed(roundEstimate(est.mid))}</div>
         <p className="range">
-          Range {aed(roundEstimate(est.low))} – {aed(roundEstimate(est.high))} · {aed(est.perSqm)} / m²
+          Range {aed(roundEstimate(est.low))} – {aed(roundEstimate(est.high))}
+          <br />
+          {aed(est.perSqm)} per m²
         </p>
         <div className="row" style={{ flexWrap: "wrap" }}>
           <span className={`badge ${est.confidence === "high" ? "ok" : est.confidence === "low" ? "warn" : ""}`}>
@@ -84,14 +86,18 @@ export default async function Valuation({ params, searchParams }: Props) {
           <DealList summary={`Based on ${deals.length} deals: ${LEVEL_TEXT[est.comps.level]}, Aug – Oct 2026`}>
             <ul className="list">
               {deals.slice(0, 25).map((d) => (
-                <li key={d.id}>
+                <li key={d.id} className="deal">
                   <span>
                     {dateLabel(d.date)}
-                    <span className="meta"> · {d.rooms != null ? roomsLabel(d.rooms) : "–"}, {d.size_sqm} m²{est.comps.level === "jvc_rooms" && d.project ? ` · ${d.project}` : ""}</span>
+                    <span className="meta">
+                      {d.rooms != null ? roomsLabel(d.rooms) : "–"}, {sqm(d.size_sqm)}
+                      {bulkLabel(d.bulkCount)}
+                      {est.comps.level === "jvc_rooms" && d.project ? ` · ${d.project}` : ""}
+                    </span>
                   </span>
-                  <span>
+                  <span className="price">
                     {aed(d.value_aed, { compact: true })}
-                    <span className="meta"> · {aed(pricePerSqm(d), { compact: true })}/m²</span>
+                    <span className="meta">{aed(pricePerSqm(d), { compact: true })}/m²</span>
                   </span>
                 </li>
               ))}
@@ -116,7 +122,7 @@ export default async function Valuation({ params, searchParams }: Props) {
         </div>
         <p className="meta">
           {pct(o.low, 0, true)} to {pct(o.high, 0, true)} a year. JVC resale prices per m² moved {pct(o.trend, 0, true)} a year
-          (Jan – Mar vs Aug – Oct 2026). The low end also allows for new supply in 2026 – 27.
+          ({windowLabel(o.from)} vs {windowLabel(o.to)} 2026). The low end also allows for new supply in 2026 – 27.
         </p>
         <Source kind="estimate">, not advice</Source>
       </div>

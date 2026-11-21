@@ -246,3 +246,15 @@ input[aria-invalid="true"] { border-color: var(--error); }
 .match { border: 2px solid var(--success); }
 .unit-card { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px; font: inherit; color: var(--text); cursor: pointer; margin-top: 8px; }
 .unit-card:hover { border-color: var(--coral); }
+
+/* Design review fixes */
+.iconbtn svg, .bicon svg, .entry .icon svg { display: block; }
+.news-block h2 { display: flex; align-items: center; gap: 8px; }
+.news-title { font-size: 15px; line-height: 21px; font-weight: 600; }
+.news summary { gap: 2px; }
+.list li.deal { align-items: flex-start; }
+.list li.deal > span { display: flex; flex-direction: column; }
+.list li.deal .price { text-align: right; white-space: nowrap; font-weight: 600; }
+.list li.deal .price .meta { font-weight: 400; }
+.list.kv li > span { color: var(--text-2); flex: 0 0 auto; }
+.list.kv li > b { text-align: right; }

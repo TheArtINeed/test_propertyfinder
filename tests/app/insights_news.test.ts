@@ -88,7 +88,8 @@ describe("insights (V5)", () => {
   it("buyer advice by position in the range", () => {
     const est = { low: 1_200_000, mid: 1_250_000, high: 1_300_000 };
     expect(buyAdvice(1_400_000, est).title).toMatch(/negotiate/);
-    expect(buyAdvice(1_400_000, est).action).toContain("AED 1300K");
+    // Updated for spec v8 W10: one money formatter ("AED 1.3M", not "AED 1300K").
+    expect(buyAdvice(1_400_000, est).action).toContain("about AED 1.3M");
     expect(buyAdvice(1_100_000, est).title).toMatch(/ask why/);
     expect(buyAdvice(1_250_000, est).tone).toBe("good");
   });

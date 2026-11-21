@@ -119,12 +119,16 @@ describe("outlook", () => {
     const cold = outlookRange(-0.25, ["2026-01", "2026-03"], ["2026-08", "2026-10"]);
     expect(cold.low).toBe(-0.2);
   });
-  it("compares Jan-Mar with the last 3 full months", () => {
+  // Updated on purpose for spec v8 W5: same windows as the momentum reading (May-Jul vs Aug-Oct, 3 months apart).
+  it("compares the previous 3 months with the last 3 full months", () => {
     const rows = [
-      ...salesAt(Array(5).fill(10000), { date: "2026-02-10", project: "X" }),
-      ...salesAt(Array(5).fill(10500), { date: "2026-09-10", project: "Y" }),
+      ...salesAt(Array(5).fill(10000), { date: "2026-06-10", project: "X" }),
+      ...salesAt(Array(5).fill(10100), { date: "2026-09-10", project: "Y" }),
+      ...salesAt(Array(5).fill(99999), { date: "2026-02-10", project: "Z" }), // Jan-Mar no longer used
     ];
     const o = outlook(rows, "2026-10");
-    expect(o.trend).toBeCloseTo(Math.pow(1.05, 12 / 7) - 1);
+    expect(o.from).toEqual(["2026-05", "2026-07"]);
+    expect(o.to).toEqual(["2026-08", "2026-10"]);
+    expect(o.trend).toBeCloseTo(Math.pow(1.01, 12 / 3) - 1);
   });
 });

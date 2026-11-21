@@ -20,8 +20,8 @@ export const DEMO = {
   plans: { rentOutFrom: "2027-02-01" },
   lead: { contact: "whatsapp" as const, consent: true },
   viewing: { channel: "whatsapp" as const, consent: true },
-  renter: { annualRent: 90_000, leaseEnd: "2027-02-15", askedIncreasePct: 10 },
-  buyer: { asking: 1_450_000 },
+  renter: { annualRent: 90_000, leaseEnd: "2027-02-28", askedIncreasePct: 10 },
+  buyer: { asking: 1_500_000 },
 } as const;
 
 /** Form value on first open = demo value; after a submit = exactly what the user sent (may be empty). */

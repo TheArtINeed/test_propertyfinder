@@ -13,8 +13,8 @@ Detailed pitch, competitor review and financial model: in the Google Drive folde
 ## Who it helps (Luma Park Views, JVC, real 2026 DLD / Ejari data)
 - **Owner (investor, primary):** 1BR let at AED 96K since January. The digest shows new leases for flats like theirs at AED 80-85K and the re-let window opening in October. One tap: "rent out from 19 Jan at AED 85K"; a verified agent gets the lead.
 - **Renter:** pays AED 96K; new leases for the same size in the building were ~AED 80K in Aug-Oct (median of 86), ~17% lower. Breaking the lease doesn't pay (2 months' penalty + agent fee + moving ≈ 16 months of savings); renegotiating or moving at renewal does. Sees units confirmed available by their owner.
-- **Buyer:** asked AED 1.5M for an 80 m² 1BR; the 12 similar resales in Aug-Oct sold for AED 1.09-1.32M (estimate ~AED 1.29M), so the bank will likely value lower and ~AED 168K more cash is needed at 80% LTV. "I bought this" turns the estimate into their owner page.
-- **Seller:** sets "open to offers from AED 1.4M" next to the 12 similar 1BR resales of Aug-Oct (AED 1.09-1.32M); the agent gets a seller with a price, not a cold list.
+- **Buyer:** asked AED 1.5M for an 80 m² 1BR; the 11 similar resales in Aug-Oct (a same-day bulk deal counted once) sold for AED 1.09-1.32M (estimate ~AED 1.29M), so the bank will likely value lower and ~AED 168K more cash is needed at 80% LTV. "I bought this" turns the estimate into their owner page.
+- **Seller:** sets "open to offers from AED 1.4M" next to the 11 similar 1BR resales of Aug-Oct (AED 1.09-1.32M); the agent gets a seller with a price, not a cold list.
 
 ## Which metrics it moves
 Portal big numbers: **supply** (listings), **engagement** (returning users), **leads**, **revenue per lead / deal**. Year 3, Dubai, base case; inputs are assumptions to check with PF data.

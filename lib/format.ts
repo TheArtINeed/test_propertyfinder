@@ -28,3 +28,9 @@ export function monthLabel(month: string): string {
 export function dateLabel(iso: string): string {
   return new Date(iso + "T00:00:00Z").toLocaleString("en-US", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 }
+
+/** W12: sizes in lists are rounded to whole m². */
+export const sqm = (n: number) => `${Math.round(n)} m²`;
+
+/** W7: label for a collapsed same-day bulk deal. */
+export const bulkLabel = (n?: number) => (n && n > 1 ? ` · same-day bulk deal (${n} units)` : "");

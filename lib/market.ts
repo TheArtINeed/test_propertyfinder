@@ -10,7 +10,28 @@ export function isResale(row: SaleRow): boolean {
 }
 
 export function residentialResales(rows: SaleRow[]): SaleRow[] {
-  return rows.filter((r) => isResale(r) && RESIDENTIAL_SALE.has(r.sub_type ?? "") && r.size_sqm > 0);
+  return collapseBulkDeals(rows.filter((r) => isResale(r) && RESIDENTIAL_SALE.has(r.sub_type ?? "") && r.size_sqm > 0));
+}
+
+/**
+ * W7: resales on the same day, in the same project, at the same price and size are one bulk deal
+ * (e.g. three identical units at AED 1,319,425 on 29 Oct). They count as one comp; bulkCount keeps N.
+ */
+export function collapseBulkDeals(rows: SaleRow[]): SaleRow[] {
+  const seen = new Map<string, SaleRow>();
+  const out: SaleRow[] = [];
+  for (const r of rows) {
+    const key = `${r.date}|${r.project ?? ""}|${r.value_aed}|${r.size_sqm}`;
+    const first = seen.get(key);
+    if (first) {
+      first.bulkCount = (first.bulkCount ?? 1) + 1;
+      continue;
+    }
+    const copy = { ...r };
+    seen.set(key, copy);
+    out.push(copy);
+  }
+  return out;
 }
 
 export const pricePerSqm = (r: SaleRow) => r.value_aed / r.size_sqm;
@@ -165,9 +186,13 @@ export function annualise(ratio: number, months: number): number {
  * 12-month outlook from the JVC trend: Jan-Mar vs the last 3 full months, annualised.
  * Range = trend +-5 pp, lower bound a further -5 pp for 2026-27 supply risk, clamped to [-20%, +15%].
  */
+/**
+ * W5: same windows as the momentum reading: previous 3 months vs last 3 months (May-Jul vs Aug-Oct),
+ * annualised. A Jan-Mar base sat on a high January and pinned the range to the lower clamp.
+ */
 export function outlook(resales: SaleRow[], month = DIGEST_MONTH): Outlook {
-  const first: [string, string] = ["2026-01", "2026-03"];
   const last = window3(month);
+  const first = window3(addMonths(month, -3));
   const startPsm = jvcMedianPerSqm(resales, first[1]);
   const endPsm = jvcMedianPerSqm(resales, last[1]);
   const centreGap = monthsBetween(first[0], last[0]);
