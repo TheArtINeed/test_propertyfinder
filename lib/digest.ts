@@ -3,7 +3,7 @@ import { AS_OF, DIGEST_MONTH, type RentRow, type SaleRow } from "./types";
 import { addMonths, daysBetween } from "./stats";
 import { buildingDealsInMonth, estimateValue, jvcMedianPerSqm, type Estimate, type Unit } from "./market";
 import { filterRents, grossYield, inBand, rentStats, type RentStats } from "./rent";
-import { capital, mockDemand, type Capital, type Demand } from "./finance";
+import { capital, mockDemand, type Capital, type Demand, refinance, refinanceTitle, type Refinance } from "./finance";
 import { median } from "./stats";
 
 export type Occupancy = "let" | "live";
@@ -14,9 +14,12 @@ export interface OwnerDetails {
   leaseEnd?: string | null;
   pricePaid?: number | null;
   loan?: number | null;
+  /** H1: current mortgage rate (share, 0.0525) and end of the fixed-rate period. */
+  mortgageRate?: number | null;
+  fixedRateEnd?: string | null;
 }
 
-export type NextStepKind = "relet" | "renewal_risk" | "open_to_offers" | "keep";
+export type NextStepKind = "relet" | "renewal_risk" | "refinance" | "open_to_offers" | "keep";
 
 export interface NextStep {
   kind: NextStepKind;
@@ -51,6 +54,8 @@ export function nextStep(input: {
   demandHigh: boolean;
   unitYield: number | null;
   jvcYield: number;
+  /** H1: comes right after the lease rules. */
+  refi?: Refinance | null;
 }): NextStep {
   // F1: an ended lease beats everything: the unit may be empty.
   if (input.daysToLeaseEnd != null && input.daysToLeaseEnd < 0)
@@ -59,6 +64,7 @@ export function nextStep(input: {
     return input.ownerGap != null && input.ownerGap > RENEWAL_RISK_GAP
       ? { kind: "relet", title: "Lease ends soon and your rent is above new leases: plan the re-let at market rent", illustrative: false }
       : { kind: "relet", title: "Lease ends soon: set your re-let plan", illustrative: false };
+  if (input.refi?.due) return { kind: "refinance", title: refinanceTitle(input.refi), illustrative: false };
   if (input.ownerGap != null && input.ownerGap > RENEWAL_RISK_GAP)
     return { kind: "renewal_risk", title: "Your rent is above new leases: consider a discount at renewal", illustrative: false };
   if (input.demandHigh && input.unitYield != null && input.unitYield < input.jvcYield)
@@ -75,7 +81,8 @@ export function renewalRiskNote(ownerRent: number | null, marketMedian: number, 
   const gap = (ownerRent - marketMedian) / marketMedian; // same formula as the digest ownerGap
   if (gap <= RENEWAL_RISK_GAP) return null;
   const diff = Math.round((ownerRent - marketMedian) / 1000);
-  return `New tenants pay about AED ${diff}K a year less for units like yours. At renewal your tenant may ask for a lower rent or move out: plan for a re-let near AED ${Math.round(marketMedian / 1000)}K.`;
+  // D7 (spec v14): one sentence, shown as a warning callout (not error red).
+  return `New tenants pay ~AED ${diff}K less. Plan the re-let near AED ${Math.round(marketMedian / 1000)}K.`;
 }
 
 /** JVC median gross yield for flats: median new-lease rent per sqm / median resale price per sqm. */
@@ -126,7 +133,8 @@ export function buildDigest(
   const jvc = jvcYield(resales, rents, month);
 
   const order: Digest["order"] =
-    details.occupancy === "live" ? ["capital", "rent", "deals", "demand"] : ["rent", "deals", "demand", "capital"];
+    // D2 (spec v14): rent, deals, capital + yield, demand; owner-occupiers see capital first.
+    details.occupancy === "live" ? ["capital", "rent", "deals", "demand"] : ["rent", "deals", "capital", "demand"];
 
   return {
     month,
@@ -135,7 +143,14 @@ export function buildDigest(
     demand,
     capital: { ...cap, low: est.low, high: est.high, changeVs3m: prev ? est.mid / prev.mid - 1 : null },
     yield: { unit: unitYield, market: marketYield, jvcMedian: jvc },
-    nextStep: nextStep({ daysToLeaseEnd, ownerGap, demandHigh: demand.level === "high", unitYield, jvcYield: jvc }),
+    nextStep: nextStep({
+      daysToLeaseEnd,
+      ownerGap,
+      demandHigh: demand.level === "high",
+      unitYield,
+      jvcYield: jvc,
+      refi: refinance({ loan: details.loan, mortgageRate: details.mortgageRate, fixedRateEnd: details.fixedRateEnd, today }),
+    }),
     order,
   };
 }

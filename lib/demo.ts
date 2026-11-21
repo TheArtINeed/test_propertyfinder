@@ -14,6 +14,8 @@ export const DEMO = {
     pricePaid: 1_100_000,
     loan: 600_000,
     titleDeed: "DEMO-0001",
+    mortgageRatePct: 5.25,
+    fixedRateEnd: "2027-04-30",
     consent: true,
   },
   subscription: { channel: "whatsapp" as const, frequency: "monthly" as const },

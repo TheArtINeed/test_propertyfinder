@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { EventName } from "@/lib/events";
 import type { Matched } from "@/lib/renter";
-import { reminderDates, validateContact, type ContactChannel } from "@/lib/renter";
+import { reminderDates, takenRequests, validateContact, VIEWINGS_KEY, type ContactChannel, type ListingState } from "@/lib/renter";
 import { aed, dateLabel, roomsLabel } from "@/lib/format";
 import { DEMO } from "@/lib/demo";
 import { AS_OF } from "@/lib/types";
@@ -26,6 +26,7 @@ export function ContactSheet({
   event,
   props,
   recipient,
+  onSent,
   onClose,
 }: {
   title: string;
@@ -35,6 +36,7 @@ export function ContactSheet({
   event: EventName;
   props: Record<string, string | number | boolean | null>;
   recipient: string;
+  onSent?: () => void;
   onClose: () => void;
 }) {
   const [channel, setChannel] = useState<ContactChannel | null>(DEMO.viewing.channel);
@@ -48,6 +50,7 @@ export function ContactSheet({
     setErrors(e);
     if (Object.keys(e).length) return;
     track(event, { ...props, channel });
+    onSent?.();
     setSent(true);
   }
 
@@ -104,29 +107,84 @@ export function ContactSheet({
 }
 
 /** V14 + V15: owner-confirmed units, matches to the lease end first; each card opens a viewing request. */
-export function OwnerConfirmedList({ units, leaseEnd }: { units: Matched[]; leaseEnd: string | null }) {
+export function OwnerConfirmedList({
+  units,
+  leaseEnd,
+}: {
+  units: (Matched & { state: ListingState })[];
+  leaseEnd: string | null;
+}) {
   const [open, setOpen] = useState<Matched | null>(null);
+  const [requested, setRequested] = useState<string[]>([]);
+  const takenSeen = useRef(false);
+  useEffect(() => {
+    try {
+      setRequested(JSON.parse(localStorage.getItem(VIEWINGS_KEY) ?? "[]"));
+    } catch {
+      setRequested([]);
+    }
+  }, []);
+  const states = Object.fromEntries(units.map((u) => [u.id, u.state]));
+  const taken = takenRequests(requested, states);
+  const freeNearLeaseEnd = units.filter((u) => u.state.kind === "available" && u.matched).length;
+  useEffect(() => {
+    if (!takenSeen.current && units.some((u) => u.state.kind !== "available")) {
+      takenSeen.current = true;
+      track("taken_unit_viewed", { taken: units.filter((u) => u.state.kind !== "available").length, requested_taken: taken.length });
+    }
+  }, [units, taken.length]);
+  function remember(id: string) {
+    const next = [...new Set([...requested, id])];
+    setRequested(next);
+    try {
+      localStorage.setItem(VIEWINGS_KEY, JSON.stringify(next));
+    } catch {
+      /* storage blocked */
+    }
+  }
   return (
     <>
+      {taken.length ? (
+        <p className="callout warn" role="status" data-testid="taken-request">
+          <span aria-hidden>!</span>
+          {taken.length === 1 ? "A unit you asked to view is now let." : `${taken.length} units you asked to view are now let.`}{" "}
+          {freeNearLeaseEnd
+            ? `${freeNearLeaseEnd} similar ${freeNearLeaseEnd === 1 ? "unit is" : "units are"} free around your lease end.`
+            : "Other owner-confirmed units are listed below."}
+        </p>
+      ) : null}
       <ul className="list" style={{ display: "block" }}>
-        {units.map((u) => (
-          <li key={u.id} style={{ display: "block", border: 0, padding: 0 }}>
-            <button className={`unit-card ${u.matched ? "match" : ""}`} onClick={() => setOpen(u)}>
-              <span>
-                <span className="badge ok">Owner-confirmed</span>{" "}
-                {u.matched ? <span className="badge coral">Free when your lease ends</span> : null}
-                <br />
-                <b>{roomsLabel(u.bedrooms)}, {u.sizeSqm} m²</b>
-                <span className="meta"> · free from {dateLabel(u.availableFrom)}</span>
-              </span>
-              <span>
-                <b>{aed(u.annualRent, { compact: true })}</b>/yr
-                <br />
-                <span className="meta">Request ›</span>
-              </span>
-            </button>
-          </li>
-        ))}
+        {units.map((u) =>
+          u.state.kind === "available" ? (
+            <li key={u.id} style={{ display: "block", border: 0, padding: 0 }}>
+              <button className={`unit-card ${u.matched ? "match" : ""}`} onClick={() => setOpen(u)}>
+                <span>
+                  <span className="badge ok">Owner-confirmed</span>{" "}
+                  {u.matched ? <span className="badge coral">Free when your lease ends</span> : null}
+                  <br />
+                  <b>{roomsLabel(u.bedrooms)}, {u.sizeSqm} m²</b>
+                  <span className="meta"> · free from {dateLabel(u.availableFrom)}</span>
+                </span>
+                <span>
+                  <b>{aed(u.annualRent, { compact: true })}</b>/yr
+                  <br />
+                  <span className="meta">Request ›</span>
+                </span>
+              </button>
+            </li>
+          ) : (
+            <li key={u.id} style={{ display: "block", border: 0, padding: 0 }}>
+              <div className="unit-card taken" aria-disabled="true" data-testid="taken-unit">
+                <span>
+                  <span className="badge">{u.state.kind === "let_agreed" ? `Let agreed · ${dateLabel(u.state.date)}` : "No longer for rent"}</span>
+                  <br />
+                  <b>{roomsLabel(u.bedrooms)}, {u.sizeSqm} m²</b>
+                </span>
+                <span className="meta">{aed(u.annualRent, { compact: true })}/yr</span>
+              </div>
+            </li>
+          ),
+        )}
       </ul>
       {open ? (
         <ContactSheet
@@ -141,6 +199,7 @@ export function OwnerConfirmedList({ units, leaseEnd }: { units: Matched[]; leas
           event="renter_lead_submitted"
           props={{ unit: open.id, matched: open.matched }}
           recipient="The owner's agent"
+          onSent={() => remember(open.id)}
           onClose={() => setOpen(null)}
         />
       ) : null}

@@ -12,7 +12,7 @@ import { Track } from "../components/client";
 import { BuildingSelect, FieldError, FooterNote, RoomsSelect, Source, TopBar } from "../ui";
 import { AdviceCard } from "../components/insights";
 import { OwnerConfirmedList, RenterReminders } from "../components/leads";
-import { matchOwnerConfirmed, MATCH_WINDOW_DAYS, noticeUrgency } from "@/lib/renter";
+import { DEMO_OWNER_STATUS, matchOwnerConfirmed, MATCH_WINDOW_DAYS, noticeUrgency, withStates } from "@/lib/renter";
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -36,7 +36,7 @@ export default async function Rent({ searchParams }: Props) {
   const rate = q.rate ?? EXAMPLE_RATE;
   const rvb = est && ok ? rentVsBuy(est.mid, q.annualRent!, rate) : null;
   const owners = ok && pilot ? ownerConfirmedUnits() : [];
-  const matches = matchOwnerConfirmed(owners, q.errors.end ? null : q.leaseEnd);
+  const matches = withStates(matchOwnerConfirmed(owners, q.errors.end ? null : q.leaseEnd), DEMO_OWNER_STATUS);
   const buyHref = `/buy?b=${b.slug}&rooms=${q.rooms}&size=${q.sizeSqm ?? ""}`;
 
   return (

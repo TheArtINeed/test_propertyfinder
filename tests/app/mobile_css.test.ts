@@ -22,3 +22,12 @@ describe("no sideways scroll on phones", () => {
     expect(rule("html, body")).toMatch(/overflow-x:\s*hidden/);
   });
 });
+
+describe("spec v14 D5: sources are plain text", () => {
+  it("the last .src rule has no background and no pill radius", () => {
+    const rules = [...css.matchAll(/(^|\n)\.src, \.src\.illustrative, \.src\.owner \{([^}]*)\}/g)];
+    expect(rules.length).toBe(1);
+    expect(rules[0][2]).toMatch(/background:\s*none/);
+    expect(rules[0][2]).toMatch(/border-radius:\s*0/);
+  });
+});

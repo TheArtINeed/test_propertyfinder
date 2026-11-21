@@ -69,7 +69,7 @@ describe("U2: the two yields are named and match the valuation", () => {
 
 describe("U3: owner rent well above new leases is a risk", () => {
   it("warns only above the 10% gap", () => {
-    expect(renewalRiskNote(95_000, 80_000, 21)).toMatch(/about AED 15K a year less.*near AED 80K/);
+    expect(renewalRiskNote(95_000, 80_000, 21)).toBe("New tenants pay ~AED 15K less. Plan the re-let near AED 80K."); // spec v14 D7 wording
     expect(renewalRiskNote(88_000, 80_000, 21)).toBeNull(); // +10% exactly
     expect(renewalRiskNote(null, 80_000, 21)).toBeNull();
     expect(renewalRiskNote(95_000, 80_000, 0)).toBeNull();
@@ -84,9 +84,13 @@ describe("U3: owner rent well above new leases is a risk", () => {
     expect(await html(home(letQ))).toContain('data-testid="renewal-risk"');
     expect(await html(home({ ...letQ, rent: "80000" }))).not.toContain('data-testid="renewal-risk"');
   });
-  it("the plans card explains the default re-let rent", async () => {
+  // Updated for spec v14 D2 ("no number repeated within the tab"): the plans card no longer repeats the
+  // new-lease median shown in the Rent block; the rent field is still prefilled with it.
+  it("the plans card prefills the re-let rent with the market rent, without repeating it as text", async () => {
     const h = await html(home(letQ));
-    expect(h).toMatch(/New leases here: median AED \d+K a year/);
+    const plans = h.slice(h.indexOf('id="intent"'), h.indexOf('data-block="numbers"'));
+    expect(plans).not.toMatch(/New leases here: median/);
+    expect(plans).toMatch(/id="i-rent"[^>]*value="80000"/);
   });
 });
 

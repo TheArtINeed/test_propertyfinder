@@ -4,14 +4,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { aed, dateLabel, roundEstimate } from "@/lib/format";
-import {
-  addLead, buildLead, deleteAllData, getHome, getLeads, removeHome, saveHome, setIntent, setStatus,
-  STATUS_LABEL, leadFieldErrors, validateIntent, type ContactMethod, type Home, type IntentKind, type Lead, type Status,
-} from "@/lib/owner";
+import { addLead, buildLead, deleteAllData, getHome, getLeads, removeHome, saveHome, setIntent, setStatus, STATUS_LABEL, leadFieldErrors, validateIntent, type ContactMethod, type Home, type IntentKind, type Lead, type Status, updateHome } from "@/lib/owner";
 import { AS_OF } from "@/lib/types";
 import { track } from "@/lib/track";
 import { checkLeaseEnd, checkRent } from "@/lib/sanity";
-import { FieldError } from "../ui";
+import { FieldError, Source } from "../ui";
+import { ContactSheet } from "./leads";
+import { checkFixedRateEnd, checkLoan, checkPercent, LIMITS } from "@/lib/sanity";
+import { WhatsAppPreview } from "./feed";
 import { ILLUSTRATIVE_AGENT } from "@/lib/agents";
 import { CHANNEL_LABEL, FREQUENCY_LABEL, leadStatus, nextUpdateDate, type Channel, type Frequency } from "@/lib/owner";
 import { DEMO } from "@/lib/demo";
@@ -22,6 +22,12 @@ interface Props {
   fallback: Home; // built from the URL when this browser has not saved the home (shared link)
   estimate: { low: number; mid: number; high: number };
   marketRent: number | null;
+  /** D2: the month's next step, shown with the plans card at the top. */
+  nextStep?: { kind?: string; title: string; illustrative: boolean } | null;
+  /** D2: WhatsApp version of the update, shown in the update settings. */
+  waLines?: string[];
+  /** D2: the numbers and alerts, placed between the plans and the settings. */
+  children?: React.ReactNode;
 }
 
 function store(): Storage | null {
@@ -32,13 +38,21 @@ function store(): Storage | null {
   }
 }
 
-export function HomePanel({ id, fallback, estimate, marketRent }: Props) {
+export function HomePanel({ id, fallback, estimate, marketRent, nextStep, waLines, children }: Props) {
   const router = useRouter();
   const [home, setHome] = useState<Home>(fallback);
   const [saved, setSaved] = useState(false);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [sheet, setSheet] = useState<null | "lead" | "status" | "delete">(null);
   const statusSeen = useRef(false);
+  const [refiOpen, setRefiOpen] = useState(false);
+  const refiLogged = useRef(false);
+  useEffect(() => {
+    if (nextStep?.kind === "refinance" && !refiLogged.current) {
+      refiLogged.current = true;
+      track("refi_step_shown", { building: fallback.building });
+    }
+  }, [nextStep?.kind, fallback.building]);
   const [now, setNow] = useState(() => new Date().toISOString());
   useEffect(() => {
     const t = setInterval(() => setNow(new Date().toISOString()), 60_000);
@@ -55,10 +69,12 @@ export function HomePanel({ id, fallback, estimate, marketRent }: Props) {
     if (s) setLeads(getLeads(s).filter((l) => l.homeId === id));
   }, [id]);
 
+  /** Merge onto what is stored now, so a stale copy never wipes plans, status or settings. */
   function persist(next: Home) {
     const s = store();
-    if (s) saveHome(s, next);
-    setHome(next);
+    const merged = s ? { ...(getHome(s, id) ?? {}), ...next } : next;
+    if (s) saveHome(s, merged as Home);
+    setHome(merged as Home);
     setSaved(true);
   }
 
@@ -103,8 +119,19 @@ export function HomePanel({ id, fallback, estimate, marketRent }: Props) {
   return (
     <>
       <div className="card" id="intent">
+        {nextStep ? (
+          <div className="step-line" data-testid="next-step">
+            <p className="meta">Next step</p>
+            <h3>{nextStep.title}</h3>
+            {nextStep.illustrative ? <Source kind="illustrative" /> : null}
+            {nextStep.kind === "refinance" ? (
+              <button className="btn dark inline" style={{ marginTop: 8 }} onClick={() => setRefiOpen(true)}>
+                Compare mortgage offers
+              </button>
+            ) : null}
+          </div>
+        ) : null}
         <h2>What are your plans?</h2>
-        <p className="meta">Agents reach you only through PF and only within these terms.</p>
         <div className="chips" role="group" aria-label="Plans">
           {([
             ["not_now", "Not now"],
@@ -130,12 +157,7 @@ export function HomePanel({ id, fallback, estimate, marketRent }: Props) {
             </div>
           </div>
         ) : null}
-        {kind === "rent_out" && marketRent ? (
-          <p className="hint" data-testid="rent-hint">
-            New leases here: median {aed(roundEstimate(marketRent), { compact: true })} a year
-            {home.occupancy === "let" && home.annualRent ? `. You get ${aed(home.annualRent, { compact: true })} now` : ""}.
-          </p>
-        ) : null}
+        {/* D2: the market rent is in the Rent block; not repeated here */}
         {kind === "open_to_offers" ? (
           <>
             <label htmlFor="i-price">Offers from, AED</label>
@@ -154,7 +176,27 @@ export function HomePanel({ id, fallback, estimate, marketRent }: Props) {
         ) : null}
       </div>
 
-      <div className="card">
+      {leads.length ? (
+        <div className="card" ref={(el) => { if (el && !statusSeen.current) { statusSeen.current = true; track("lead_status_viewed", { requests: leads.length }); } }}>
+          <h3>My requests</h3>
+          <ul className="list">
+            {leads.map((l) => (
+              <li key={l.id} style={{ flexDirection: "column", gap: 6 }}>
+                <span>
+                  {l.intent === "sell" ? "Sell" : "Rent out"} · {aed(l.askingPrice, { compact: true })}
+                  <span className="meta"> · from {dateLabel(l.availableFrom)}</span>
+                </span>
+                <LeadSteps status={leadStatus(l.createdAt, now)} />
+              </li>
+            ))}
+          </ul>
+          <p className="tiny">To {ILLUSTRATIVE_AGENT.name}, {ILLUSTRATIVE_AGENT.agency}. Agent and replies are illustrative.</p>
+        </div>
+      ) : null}
+
+      {children}
+
+      <div className="card settings" data-testid="settings">
         <div className="between">
           <h3>Status</h3>
           <button className="linkbtn" onClick={() => setSheet("status")}>Change</button>
@@ -181,34 +223,15 @@ export function HomePanel({ id, fallback, estimate, marketRent }: Props) {
             </ul>
           </details>
         ) : null}
-      </div>
-
-      <SubscriptionCard home={home} onChange={(sub) => persist({ ...home, subscription: sub })} />
-
-      {leads.length ? (
-        <div className="card" ref={(el) => { if (el && !statusSeen.current) { statusSeen.current = true; track("lead_status_viewed", { requests: leads.length }); } }}>
-          <h3>My requests</h3>
-          <ul className="list">
-            {leads.map((l) => (
-              <li key={l.id} style={{ flexDirection: "column", gap: 6 }}>
-                <span>
-                  {l.intent === "sell" ? "Sell" : "Rent out"} · {aed(l.askingPrice, { compact: true })}
-                  <span className="meta"> · from {dateLabel(l.availableFrom)}</span>
-                </span>
-                <LeadSteps status={leadStatus(l.createdAt, now)} />
-              </li>
-            ))}
-          </ul>
-          <p className="tiny">To {ILLUSTRATIVE_AGENT.name}, {ILLUSTRATIVE_AGENT.agency}. Agent and replies are illustrative.</p>
-        </div>
-      ) : null}
-
-      <div className="card">
-        <p className="meta">
+        <SubscriptionCard home={home} waLines={waLines} onChange={(sub) => persist({ ...home, subscription: sub })} />
+        <p className="meta" style={{ marginTop: 8 }}>
           {saved ? "Saved on this device." : "This home is not saved on this device yet."}{" "}
           <button className="linkbtn" onClick={() => setSheet("delete")}>Remove or delete data</button>
         </p>
       </div>
+
+
+
 
       {sheet === "lead" ? (
         <LeadSheet
@@ -240,9 +263,10 @@ export function HomePanel({ id, fallback, estimate, marketRent }: Props) {
             let next: Home;
             if (s) {
               if (!saved) saveHome(s, home);
-              next = setStatus(s, id, status, AS_OF, extra);
+              setStatus(s, id, status, AS_OF, extra);
+              next = updateHome(s, id, { loan: extra.loan ?? null, mortgageRate: extra.mortgageRate ?? null, fixedRateEnd: extra.fixedRateEnd ?? null })!;
             } else {
-              next = { ...home, status, statusHistory: [...home.statusHistory, { status, at: AS_OF }] };
+              next = { ...home, status, statusHistory: [...home.statusHistory, { status, at: AS_OF }], loan: extra.loan ?? null, mortgageRate: extra.mortgageRate ?? null, fixedRateEnd: extra.fixedRateEnd ?? null };
             }
             setHome(next);
             setSaved(true);
@@ -253,6 +277,17 @@ export function HomePanel({ id, fallback, estimate, marketRent }: Props) {
               setSheet("lead");
             }
           }}
+        />
+      ) : null}
+
+      {refiOpen ? (
+        <ContactSheet
+          title="Compare mortgage offers"
+          summary={<p className="meta">{home.building} · {home.unitNumber}{home.loan ? ` · loan left ${aed(home.loan, { compact: true })}` : ""}</p>}
+          event="mortgage_lead_submitted"
+          props={{ source: "refi", building: home.building }}
+          recipient="A PF mortgage adviser"
+          onClose={() => setRefiOpen(false)}
         />
       ) : null}
 
@@ -311,14 +346,21 @@ function StatusSheet({
 }: {
   home: Home;
   onClose: () => void;
-  onSave: (s: Status, extra: { annualRent?: number | null; leaseEnd?: string | null }) => void;
+  onSave: (s: Status, extra: { annualRent?: number | null; leaseEnd?: string | null; loan?: number | null; mortgageRate?: number | null; fixedRateEnd?: string | null }) => void;
 }) {
   const [status, setS] = useState<Status>(home.status ?? "live");
   const [rent, setRent] = useState(String(home.annualRent ?? DEMO.owner.annualRent));
   const [leaseEnd, setLeaseEnd] = useState<string>(home.leaseEnd ?? DEMO.owner.leaseEnd);
   const rentErr = status === "let" ? (rent.trim() === "" ? "Enter the annual rent" : checkRent(rent)) : undefined;
   const endErr = status === "let" ? (leaseEnd === "" ? "Pick the lease end date" : checkLeaseEnd(leaseEnd)) : undefined;
-  const invalid = !!(rentErr || endErr);
+  // H1: optional mortgage details (prefilled for the demo)
+  const [loan, setLoan] = useState(String(home.loan ?? DEMO.owner.loan));
+  const [rate, setRate] = useState(String(home.mortgageRate != null ? Math.round(home.mortgageRate * 10000) / 100 : DEMO.owner.mortgageRatePct));
+  const [fixedEnd, setFixedEnd] = useState<string>(home.fixedRateEnd ?? DEMO.owner.fixedRateEnd);
+  const loanErr = loan.trim() === "" ? undefined : checkLoan(loan, home.pricePaid ?? null);
+  const rateErr = checkPercent(rate, LIMITS.rate, "a rate");
+  const fixedErr = checkFixedRateEnd(fixedEnd);
+  const invalid = !!(rentErr || endErr || loanErr || rateErr || fixedErr);
   return (
     <div className="sheet-backdrop" role="dialog" aria-modal="true" aria-label="Change status" onClick={onClose}>
       <div className="sheet" onClick={(e) => e.stopPropagation()}>
@@ -345,8 +387,32 @@ function StatusSheet({
           </div>
         ) : null}
         {status === "for_sale" ? <p className="hint">Next you can ask PF to connect you with an agent.</p> : null}
+        <label>Mortgage (optional)</label>
+        <div className="grid2">
+          <div>
+            <label htmlFor="s-loan">Loan left, AED</label>
+            <input id="s-loan" inputMode="numeric" value={loan} aria-invalid={!!loanErr} onChange={(e) => setLoan(e.target.value)} />
+            <FieldError msg={loanErr} />
+          </div>
+          <div>
+            <label htmlFor="s-rate">Rate, %</label>
+            <input id="s-rate" inputMode="decimal" value={rate} aria-invalid={!!rateErr} onChange={(e) => setRate(e.target.value)} />
+            <FieldError msg={rateErr} />
+          </div>
+        </div>
+        <label htmlFor="s-fixed">Fixed rate ends</label>
+        <input id="s-fixed" type="date" value={fixedEnd} aria-invalid={!!fixedErr} onChange={(e) => setFixedEnd(e.target.value)} />
+        <FieldError msg={fixedErr} />
         <div style={{ marginTop: 16 }}>
-          <button className="btn" disabled={invalid} onClick={() => onSave(status, { annualRent: Number(rent) || null, leaseEnd: leaseEnd || null })}>
+          <button className="btn" disabled={invalid} onClick={() =>
+              onSave(status, {
+                annualRent: Number(rent) || null,
+                leaseEnd: leaseEnd || null,
+                loan: Number(loan) > 0 ? Number(loan) : null,
+                mortgageRate: Number(rate) > 0 ? Number(rate) / 100 : null,
+                fixedRateEnd: fixedEnd || null,
+              })
+            }>
             Save status
           </button>
         </div>
@@ -501,11 +567,11 @@ export function LeadSteps({ status }: { status: "sent" | "accepted" }) {
 }
 
 /** V11: channel and frequency of the monthly update, changeable here (closes O7). */
-function SubscriptionCard({ home, onChange }: { home: Home; onChange: (s: NonNullable<Home["subscription"]>) => void }) {
+function SubscriptionCard({ home, onChange, waLines }: { home: Home; onChange: (s: NonNullable<Home["subscription"]>) => void; waLines?: string[] }) {
   const [edit, setEdit] = useState(false);
   const sub = home.subscription;
   return (
-    <div className="card" id="subscription">
+    <div className="settings-row" id="subscription">
       <div className="between">
         <h3>Your monthly update</h3>
         <button className="linkbtn" onClick={() => setEdit((e) => !e)}>{edit ? "Done" : sub ? "Change" : "Turn on"}</button>
@@ -535,6 +601,7 @@ function SubscriptionCard({ home, onChange }: { home: Home; onChange: (s: NonNul
           </div>
         </>
       ) : null}
+      {edit && waLines ? <WhatsAppPreview lines={waLines} /> : null}
       <p className="tiny">Delivery is simulated in this prototype.</p>
     </div>
   );

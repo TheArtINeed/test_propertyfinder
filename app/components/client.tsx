@@ -3,11 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSavedHomes } from "./use-homes";
+import { GoldenVisaLine } from "./golden-visa";
+import { portfolioCount, combinedPricePaid } from "@/lib/portfolio";
 import type { EventName } from "@/lib/events";
 import { searchBuildings, type Building } from "@/lib/market";
 import { aed, pct, roomsLabel, roundEstimate } from "@/lib/format";
 import type { Portfolio } from "@/lib/portfolio";
-import { CHANNEL_LABEL, FREQUENCY_LABEL, getHomes, homeId, nextUpdateDate, saveHome, type Channel, type Frequency, type Home } from "@/lib/owner";
+import { CHANNEL_LABEL, FREQUENCY_LABEL, getHomes, homeId, nextUpdateDate, saveHome, type Channel, type Frequency, type Home, JUST_SAVED_KEY, nextFreeUnit, afterSavePath } from "@/lib/owner";
 import { dateLabel } from "@/lib/format";
 import { AS_OF, SQFT_PER_SQM } from "@/lib/types";
 import { hasErrors, validateClaim, validateUnitForm, type ClaimErrors, type FieldErrors } from "@/lib/forms";
@@ -46,17 +49,16 @@ export function SessionStart() {
 }
 
 export function MyHomes() {
-  const [homes, setHomes] = useState<Home[]>([]);
+  const saved = useSavedHomes();
+  const homes = saved ?? [];
   const [summary, setSummary] = useState<Portfolio | null>(null);
+  const viewedLogged = useRef(false);
   useEffect(() => {
-    let list: Home[] = [];
-    try {
-      list = getHomes(localStorage);
-    } catch {
-      list = [];
+    const list = saved ?? [];
+    if (!list.length) {
+      setSummary(null);
+      return;
     }
-    setHomes(list);
-    if (!list.length) return;
     fetch("/api/portfolio", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -66,11 +68,14 @@ export function MyHomes() {
       .then((j: { ok: boolean; portfolio?: Portfolio }) => {
         if (!j.ok || !j.portfolio) return;
         setSummary(j.portfolio);
-        track("portfolio_viewed", { homes: j.portfolio.count, attention: j.portfolio.attention?.nextStep.kind ?? null });
+        if (!viewedLogged.current) {
+          viewedLogged.current = true; // once per screen, not on every refresh
+          track("portfolio_viewed", { homes: j.portfolio.count, attention: j.portfolio.attention?.nextStep.kind ?? null });
+        }
       })
       .catch(() => setSummary(null));
-  }, []);
-  if (!homes.length) return null;
+  }, [saved]);
+  if (!homes.length) return null; // D10: the card shows only when homes exist
   const attentionHome = summary?.attention ? homes.find((h) => h.id === summary.attention!.id) : undefined;
   return (
     <div className="card" id="propworth">
@@ -78,7 +83,7 @@ export function MyHomes() {
       {summary && summary.count ? (
         <div className="stack" data-testid="portfolio-summary">
           <p className="meta">
-            Your PropWorth · {summary.count} {summary.count === 1 ? "home" : "homes"}
+            Your PropWorth · {portfolioCount(homes.length, summary.count).label}
           </p>
           <div className="mid">
             {aed(roundEstimate(summary.low), { compact: true })} – {aed(roundEstimate(summary.high), { compact: true })}
@@ -98,6 +103,10 @@ export function MyHomes() {
           ) : (
             <p className="meta">Nothing urgent this month.</p>
           )}
+          {portfolioCount(homes.length, summary.count).valueNote ? (
+            <p className="hint">{portfolioCount(homes.length, summary.count).valueNote}.</p>
+          ) : null}
+          <GoldenVisaLine estimate={summary.mid} pricePaid={combinedPricePaid(homes)} scope="portfolio" />
           <p className="hint">PropWorth estimate · DLD registered resales, 2026</p>
         </div>
       ) : null}
@@ -114,25 +123,27 @@ export function MyHomes() {
           </li>
         ))}
       </ul>
-      <Link href="/own" className="meta">
+      <Link href="/own?from=propworth" className="meta" style={{ display: "block", textAlign: "center", marginTop: 8 }}>
         + Add a home
       </Link>
     </div>
   );
 }
 
-export function homeQuery(h: Pick<Home, "unitNumber" | "rooms" | "sizeSqm" | "occupancy" | "annualRent" | "leaseEnd" | "pricePaid" | "loan">) {
+export function homeQuery(h: Pick<Home, "unitNumber" | "rooms" | "sizeSqm" | "occupancy" | "annualRent" | "leaseEnd" | "pricePaid" | "loan" | "mortgageRate" | "fixedRateEnd">) {
   const q = new URLSearchParams({ unit: h.unitNumber, rooms: String(h.rooms), size: String(h.sizeSqm) });
   if (h.occupancy) q.set("occ", h.occupancy);
   if (h.occupancy === "let" && h.annualRent) q.set("rent", String(h.annualRent));
   if (h.occupancy === "let" && h.leaseEnd) q.set("leaseEnd", h.leaseEnd);
   if (h.pricePaid) q.set("paid", String(h.pricePaid));
   if (h.loan) q.set("loan", String(h.loan));
+  if (h.mortgageRate) q.set("rate", String(Math.round(h.mortgageRate * 10000) / 100));
+  if (h.fixedRateEnd) q.set("fixedEnd", h.fixedRateEnd);
   return q.toString();
 }
 export const homeUrl = (h: Home) => `/own/${h.slug}/home?${homeQuery(h)}`;
 
-export function BuildingSearch({ buildings }: { buildings: Building[] }) {
+export function BuildingSearch({ buildings, from }: { buildings: Building[]; from?: string | null }) {
   const pilot = buildings.find((b) => b.active)!;
   const [q, setQ] = useState(pilot.name);
   const isPilot = q.trim().toLowerCase() === pilot.name.toLowerCase();
@@ -151,7 +162,7 @@ export function BuildingSearch({ buildings }: { buildings: Building[] }) {
         onFocus={(e) => e.currentTarget.select()}
       />
       {open.map((b) => (
-        <Link key={b.slug} className="pick" href={`/own/${b.slug}`}>
+        <Link key={b.slug} className="pick" href={`/own/${b.slug}${from ? `?from=${from}` : ""}`}>
           <span>
             <b>{b.name}</b>
             <span className="meta"> · JVC · {b.resales} resales in 2026</span>
@@ -222,14 +233,26 @@ export function UnitForm({
   slug,
   roomOptions,
   initial,
+  from,
 }: {
   slug: string;
   roomOptions: { rooms: number; medianSize: number; count: number }[];
   initial?: { unit?: string; rooms?: number; sizeSqm?: number };
+  from?: string | null;
 }) {
   const router = useRouter();
   const options = roomOptions.length ? roomOptions : [0, 1, 2, 3].map((r) => ({ rooms: r, medianSize: [38, 75, 115, 160][r], count: 0 }));
   const [unit, setUnit] = useState(initial?.unit || DEMO.unit);
+  // Adding another home: suggest the next free unit number so the demo never overwrites a saved home.
+  useEffect(() => {
+    if (initial?.unit) return;
+    try {
+      const free = nextFreeUnit(getHomes(localStorage), slug, DEMO.unit);
+      if (free !== DEMO.unit) setUnit(free);
+    } catch {
+      /* storage blocked */
+    }
+  }, [initial?.unit, slug]);
   const [rooms, setRooms] = useState<number>(
     initial?.rooms ?? (options.some((o) => o.rooms === DEMO.rooms) ? DEMO.rooms : options[0].rooms),
   );
@@ -244,6 +267,7 @@ export function UnitForm({
     setErrors(v.errors);
     if (hasErrors(v.errors)) return;
     const q = new URLSearchParams({ unit: unit.trim().toUpperCase(), rooms: String(rooms), size: String(v.sizeSqm) });
+    if (from) q.set("from", from);
     router.push(`/own/${slug}/value?${q}`);
   }
   return (
@@ -311,7 +335,7 @@ interface UnitCtx {
 }
 
 /** O0 -> O10 bridge: "Get this every month" + optional details + claim (O1) with consent (C6). */
-export function GetMonthly({ ctx, prefillPaid }: { ctx: UnitCtx; prefillPaid?: number | null }) {
+export function GetMonthly({ ctx, prefillPaid, from }: { ctx: UnitCtx; prefillPaid?: number | null; from?: string | null }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [occ, setOcc] = useState<"let" | "live">(DEMO.owner.occupancy);
@@ -361,23 +385,29 @@ export function GetMonthly({ ctx, prefillPaid }: { ctx: UnitCtx; prefillPaid?: n
     }
     track("digest_subscribed", { channel, frequency, building: ctx.building });
     track("unit_claimed", { building: ctx.building, rooms: ctx.rooms, verification: home.verification, occupancy: occ });
-    router.push(homeUrl(home));
+    try {
+      sessionStorage.setItem(JUST_SAVED_KEY, home.id); // P10: My Home confirms it went into PropWorth
+    } catch {
+      /* storage blocked */
+    }
+    router.push(afterSavePath(from, home.id, homeUrl(home)));
   }
 
   return (
     <>
-      <button
-        className="btn"
-        onClick={() => {
-          track("get_monthly_clicked", { building: ctx.building, rooms: ctx.rooms });
-          setOpen(true);
-        }}
-      >
-        Get this every month
-      </button>
-      <p className="hint" style={{ textAlign: "center" }}>
-        A monthly update on your home: rents, deals, demand and one next step.
-      </p>
+      {!open ? (
+        <div className="sticky-cta" data-testid="sticky-cta">
+          <button
+            className="btn"
+            onClick={() => {
+              track("get_monthly_clicked", { building: ctx.building, rooms: ctx.rooms });
+              setOpen(true);
+            }}
+          >
+            Get this every month
+          </button>
+        </div>
+      ) : null}
       {open ? (
         <div className="sheet-backdrop" role="dialog" aria-modal="true" aria-label="Save my home" onClick={() => setOpen(false)}>
           <form className="sheet" onClick={(e) => e.stopPropagation()} onSubmit={save} noValidate>
@@ -405,6 +435,7 @@ export function GetMonthly({ ctx, prefillPaid }: { ctx: UnitCtx; prefillPaid?: n
               ))}
             </div>
             <p className="hint">Next update: {dateLabel(nextUpdateDate())}. Delivery is simulated in this prototype.</p>
+            <p className="hint">This home goes into your PropWorth: all your homes in one place. Own more homes? You can add them next.</p>
             <p className="meta" style={{ marginTop: 12 }}>Optional details make the update more useful. You can change them later.</p>
             {!ctx.unitNumber ? (
               <>

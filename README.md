@@ -46,6 +46,15 @@ Static concepts for the entry points that bring owners back without them opening
 - **Scout**: owners already ask the assistant what their home is worth; the answer is a PropWorth card with "Get this every month".
 - **My Home tab**: a permanent place in the app next to Search and Saved, with a badge when the new update is out.
 
+After the purchase, the same approach covers the end of ownership and the money around the home (spec section 22):
+
+| Sold → search again | Home services in My Home |
+|---|---|
+| ![Sold](docs/mockups/entry-5-sold.png) | ![Services](docs/mockups/entry-6-services.png) |
+
+- **Sold → search again**: a sale archives the home in PropWorth (sale price vs the last estimate) and opens the next search, prefilled with the budget the sale frees up. A sale starts the next search instead of ending the relationship.
+- **Home services**: one offer at a time, tied to the owner's dates: refinance when the fixed rate ends (about AED 250 a month on the demo loan at an example 4.5% rate), finding a tenant, Ejari renewal, landlord insurance, repairs. Partner offers with revenue share; not built.
+
 ## Data
 Real public data: Dubai Land Department resales and Ejari contracts for JVC, 1 Jan – 20 Nov 2026 (`dataset/`).
 - Resales only: ready units, procedure "Sale" (off-plan, Delayed Sell and lease-to-own excluded).
@@ -58,7 +67,7 @@ Real public data: Dubai Land Department resales and Ejari contracts for JVC, 1 J
 ## Real vs mocked
 | Real (DLD / Ejari) | Mocked |
 |---|---|
-| Estimate and range, deal lists, outlook, rents, Rent watch, RERA proxy, yield, bank gap, rent vs buy, "What this means" readings, price chart, deal / lease news items | Demand block (labelled "Illustrative"), editorial news (tower, school, road works, service charge) and owners' posts (labelled illustrative), waitlist, the agent who gets a request and its status (Sent → Accepted → Viewing), digest delivery by WhatsApp / email, renter reminders, viewing / mortgage / buyer requests, title deed verification, leads (stored in the browser, nothing sent), owner-confirmed units (synthetic listings), mortgage rate (example 4.5%, editable) |
+| Estimate and range, deal lists, outlook, rents, Rent watch, RERA proxy, yield, bank gap, rent vs buy, "What this means" readings, price chart, deal / lease news items | Demand block (labelled "Illustrative"), editorial news (tower, school, road works, service charge) and owners' posts (labelled illustrative), waitlist, the agent who gets a request and its status (Sent → Accepted → Viewing), digest and alert delivery by push / WhatsApp / email (My Home shows what would have been sent), renter reminders, viewing / mortgage / buyer requests, title deed verification, leads (stored in the browser, nothing sent), owner-confirmed units (synthetic listings), mortgage rate (example 4.5%, editable), owner statuses of the owner-confirmed units (demo), the refinance saving (example rate) |
 
 ## Calculation notes
 - Estimate: median AED/m² of comps in the last 3 months × size, range P25–P75. Fallback: same building any rooms → JVC same rooms; confidence drops to low.
@@ -71,3 +80,5 @@ Real public data: Dubai Land Department resales and Ejari contracts for JVC, 1 J
 - **P1** (no entry point yet): break / move / negotiate calculator (R6), "I think it's worth" (O4), "Something wrong?" report (C4), mock sign-in (C5), one monthly update for all homes (W15). "My homes" (O5) is a list on the first screen only. Notification settings (O7: channel and frequency on My Home) and contact about an owner-confirmed unit (R5: "Request a viewing") are built.
 - **P2**: real title deed verification, real lead delivery, real email / WhatsApp, Arabic and RTL, move-out and deposit, areas beyond JVC and other markets, real PF demand data, Rent in 12, pay-per-deal matching with DLD / Ejari, history before 2026 (needs a Dubai Pulse key).
 - Optional LLM wording of the digest was skipped; everything is deterministic.
+- **Planned next (spec section 22)**: refinance as the next step for owners with a loan (H1), "Let agreed" for units the owner has let so renters cannot request a taken unit (H2), "Something wrong?" and a Help page (H3).
+- **Known gaps**: two people claiming the same unit (resolved by title deed verification, not built); real sign-in; Scout answering with My Home is a mockup only, no LLM in the prototype; real partner offers and revenue share.

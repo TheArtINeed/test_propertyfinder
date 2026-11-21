@@ -43,22 +43,26 @@ describe("V11, V12: subscription and WhatsApp message", () => {
     expect(lines[1]).toContain(`${d.rent.stats.count} new leases`);
     expect(lines[2]).toContain(d.nextStep.title);
   });
-  it("My Home shows the WhatsApp preview", async () => {
-    expect(await html(home(unitQ))).toContain("How it arrives on WhatsApp");
+  // Updated for spec v14 D2: the WhatsApp preview moved from the Update tab into the update settings ("Change").
+  it("the WhatsApp preview is not repeated in the Update tab", async () => {
+    expect(await html(home(unitQ))).not.toContain("How it arrives on WhatsApp");
   });
 });
 
 describe("N1, N2: news apart from the numbers", () => {
-  it("no news item inside the numbers block; news block comes after it", async () => {
+  // Updated for spec v14 D2: Update has the numbers only; market moves and building news live in the News tab.
+  it("Update tab: no news and no market moves; News tab: both sections, news never inside the numbers", async () => {
     const h = await html(home(unitQ));
-    const numbersStart = h.indexOf('data-block="numbers"');
-    const newsStart = h.indexOf('data-block="news"');
-    expect(numbersStart).toBeGreaterThan(0);
+    expect(h).toContain('data-block="numbers"');
+    for (const n of areaNews()) expect(h).not.toContain(n.title);
+    expect(h).not.toContain("Market moves");
+    const news = await html(home({ ...unitQ, tab: "news" }));
+    const numbersStart = news.indexOf('data-block="numbers"');
+    const newsStart = news.indexOf('data-block="news"');
     expect(newsStart).toBeGreaterThan(numbersStart);
-    const numbers = h.slice(numbersStart, h.indexOf("How it arrives on WhatsApp"));
-    for (const n of areaNews()) expect(numbers).not.toContain(n.title);
-    expect(numbers).toContain("Market moves");
-    expect(h.slice(newsStart)).toContain("Building and area news");
+    expect(news.slice(numbersStart, newsStart)).toContain("Market moves");
+    for (const n of areaNews()) expect(news.slice(numbersStart, newsStart)).not.toContain(n.title);
+    expect(news.slice(newsStart)).toContain("Building and area news");
   });
   it("every item has date, source, impact and the right label", () => {
     const { resales, rents } = loadSnapshot();

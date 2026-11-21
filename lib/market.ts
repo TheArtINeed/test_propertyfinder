@@ -241,3 +241,10 @@ export function roomTypes(resales: SaleRow[], building: string): { rooms: number
     .map(([rooms, sizes]) => ({ rooms, count: sizes.length, medianSize: median(sizes) }))
     .sort((a, b) => a.rooms - b.rooms);
 }
+
+/** Plain words for the comparables level (valuation, "How we estimate"). */
+export const COMP_LEVEL_TEXT: Record<CompLevel, string> = {
+  building_rooms: "same building, same bedrooms, similar size",
+  building_any: "same building, all unit types (price per m²)",
+  jvc_rooms: "JVC, same bedrooms and similar size",
+};

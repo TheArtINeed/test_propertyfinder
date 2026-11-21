@@ -8,7 +8,9 @@ type Props = { params: Promise<{ building: string }>; searchParams: Promise<Reco
 
 export default async function PickUnit({ params, searchParams }: Props) {
   const { building: slug } = await params;
-  const q = parseUnitQuery(await searchParams);
+  const sp = await searchParams;
+  const q = parseUnitQuery(sp);
+  const from = sp.from === "propworth" ? "propworth" : null;
   const { buildings, resales } = loadSnapshot();
   const b = findBuilding(buildings, slug);
   if (!b) return <BuildingNotFound />;
@@ -21,7 +23,7 @@ export default async function PickUnit({ params, searchParams }: Props) {
       <p className="lead">
         {b.name} · {b.resales} resales in 2026. Takes 20 seconds.
       </p>
-      <UnitForm slug={b.slug} roomOptions={rooms} initial={q ? { unit: q.unit, rooms: q.rooms, sizeSqm: q.sizeSqm } : undefined} />
+      <UnitForm slug={b.slug} roomOptions={rooms} initial={q ? { unit: q.unit, rooms: q.rooms, sizeSqm: q.sizeSqm } : undefined} from={from} />
       <FooterNote />
     </main>
   );

@@ -29,7 +29,7 @@ describe("digest for M = 2026-10", () => {
     expect(d.rent.stats.median).toBe(85_000);
     expect(d.deals.all).toHaveLength(4);
     expect(d.deals.likeYours).toHaveLength(3);
-    expect(d.order).toEqual(["rent", "deals", "demand", "capital"]);
+    expect(d.order).toEqual(["rent", "deals", "capital", "demand"]); // spec v14 D2: capital + yield before demand
     expect(d.rent.ownerGap).toBeCloseTo(14_000 / 85_000);
     expect(d.nextStep.kind).toBe("renewal_risk");
     expect(d.demand.label).toMatch(/Illustrative/);

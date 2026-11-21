@@ -27,10 +27,13 @@ const props = (building: string, sp: Record<string, string> = {}) => ({
 const html = async (el: ReactElement | Promise<ReactElement>) => renderToString(await el).replaceAll("<!-- -->", "");
 
 describe("smoke: every route renders for the hero building and has a next action", () => {
-  it("/ pitches the product, then gives owner, renter and buyer entries (V3)", async () => {
+  // Replaces the V3 pitch test (spec v14 D10): no pitch or instructions; one link per destination.
+  it("/ has the promise and exactly one link each to owner, renter and buyer flows", async () => {
     const h = await html(<Home />);
-    for (const s of ["What you get", "How it works", "Why save it?", "No sign-up to see the value", 'href="/own"', 'href="/rent"', 'href="/buy"', 'href="/entry-points"'])
-      expect(h).toContain(s);
+    for (const dest of ['href="/own"', 'href="/rent"', 'href="/buy"']) expect(h.split(dest).length - 1).toBe(1);
+    for (const s of ["What you get", "How it works", "Why save it?", "Not an owner?", "No sign-up to see the value", "Takes 20 seconds", 'href="/entry-points"'])
+      expect(h).not.toContain(s);
+    expect(h).toContain("Your home is your biggest asset");
   });
 
   it("/entry-points shows site hooks into each flow (V4)", async () => {
@@ -73,7 +76,7 @@ describe("smoke: every route renders for the hero building and has a next action
   });
 
   it("/own prefills the pilot building with a Continue action; others are not links", async () => {
-    const h = await html(<Own />);
+    const h = await html(Own({ searchParams: Promise.resolve({}) }));
     expect(h).toContain('value="Luma Park Views"');
     expect(h).toMatch(/<a class="pick" href="\/own\/luma-park-views">/);
     expect(h).toContain("Continue ›");
@@ -98,9 +101,10 @@ describe("smoke: every route renders for the hero building and has a next action
     expect(h).toContain("Show as table");
   });
 
-  it("/own/[building]/home shows the digest blocks in order and the intent card", async () => {
+  // Updated for spec v14 D2: next step and plans first, then Rent, Deals, Capital, Demand.
+  it("/own/[building]/home shows the next step first, then the digest blocks in order", async () => {
     const h = await html(MyHome(props(hero, { ...unit, occ: "let", rent: "95000", leaseEnd: "2027-01-31" })));
-    const order = ["<h3>Rent</h3>", "<h3>Deals</h3>", "<h3>Demand</h3>", "<h3>Your capital</h3>", "<h3>Next step</h3>"].map((s) => h.indexOf(s));
+    const order = ['data-testid="next-step"', "What are your plans?", "<h3>Rent</h3>", "<h3>Deals</h3>", "<h3>Your capital</h3>", "<h3>Demand</h3>"].map((s) => h.indexOf(s));
     expect(order.every((i) => i > 0)).toBe(true);
     expect([...order].sort((a, b) => a - b)).toEqual(order);
     expect(h).toContain("October 2026");
@@ -177,5 +181,15 @@ describe("POST /api/events", () => {
   it("rejects unknown events and bad JSON", async () => {
     expect((await post({ name: "evil" })).status).toBe(400);
     expect((await post("{not json")).status).toBe(400);
+  });
+});
+
+describe("spec v14 D3: My Home tabs do not add history entries", () => {
+  it("each tab link replaces the current entry", async () => {
+    const h = renderToString(
+      await MyHome({ params: Promise.resolve({ building: "luma-park-views" }), searchParams: Promise.resolve({ unit: "1204", rooms: "1", size: "80" }) }),
+    );
+    const tabs = h.slice(h.indexOf('aria-label="My Home sections"'), h.indexOf("</nav>", h.indexOf('aria-label="My Home sections"')));
+    expect((tabs.match(/data-replace="true"/g) ?? []).length).toBe(4);
   });
 });

@@ -14,6 +14,12 @@ import { aed, bulkLabel, dateLabel, monthLabel, pct, roomsLabel, roundEstimate, 
 import { AS_OF, DIGEST_MONTH, type RentRow } from "@/lib/types";
 import { Track } from "../../../components/client";
 import { HomePanel } from "../../../components/home-panel";
+import { GoldenVisaLine } from "../../../components/golden-visa";
+import { JustSavedBanner } from "../../../components/portfolio";
+import { AlertsInbox, MethodSheet } from "../../../components/alerts";
+import { alertsForHome } from "@/lib/alerts";
+import { COMP_LEVEL_TEXT } from "@/lib/market";
+import { windowLabel } from "@/lib/insights";
 import { BuildingNotFound, ComingSoon, FooterNote, MissingUnit, Source, TopBar } from "../../../ui";
 
 type Props = { params: Promise<{ building: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
@@ -30,7 +36,7 @@ export default async function MyHome({ params, searchParams }: Props) {
   if (!q) return <MissingUnit slug={slug} />;
 
   const unit = { building: b.name, rooms: q.rooms, sizeSqm: q.sizeSqm };
-  const details = { occupancy: q.occupancy, annualRent: q.annualRent, leaseEnd: q.leaseEnd, pricePaid: q.pricePaid, loan: q.loan };
+  const details = { occupancy: q.occupancy, annualRent: q.annualRent, leaseEnd: q.leaseEnd, pricePaid: q.pricePaid, loan: q.loan, mortgageRate: q.mortgageRate, fixedRateEnd: q.fixedRateEnd };
   const d = buildDigest(resales, rents, unit, details);
   const valueUrl = `/own/${slug}/value?unit=${encodeURIComponent(q.unit)}&rooms=${q.rooms}&size=${q.sizeSqm}`;
   if (!d) {
@@ -43,6 +49,10 @@ export default async function MyHome({ params, searchParams }: Props) {
   const rera = d.rent.ownerRent ? renewalCheck(d.rent.ownerRent, reraIndexProxy(rents, q.sizeSqm).index, { leaseEnd: q.leaseEnd, today: AS_OF }) : null;
 
   const id = homeId(slug, q.unit || "unit");
+  const estNow = estimateValue(resales, unit);
+  const methodProps = estNow
+    ? { comps: estNow.comps.rows.length, windowText: `${windowLabel(estNow.comps.window)} 2026`, levelText: COMP_LEVEL_TEXT[estNow.comps.level], confidence: estNow.confidence }
+    : null;
   const fallback: Home = {
     id, building: b.name, slug, unitNumber: q.unit || "—", rooms: q.rooms, sizeSqm: q.sizeSqm, claimedAt: AS_OF,
     verification: "none", statusHistory: q.occupancy ? [{ status: q.occupancy, at: AS_OF }] : [], status: q.occupancy,
@@ -63,13 +73,21 @@ export default async function MyHome({ params, searchParams }: Props) {
         <Source kind="illustrative" />
       </section>
     ),
-    capital: <CapitalBlock key="capital" d={d} />,
+    capital: (
+      <div key="capital">
+        <CapitalBlock d={d} method={methodProps} pricePaid={q.pricePaid} />
+        <section>
+          <YieldBlock d={d} />
+        </section>
+      </div>
+    ),
   };
 
   return (
     <main className="shell">
       <Track name="digest_opened" props={{ building: b.name, month: DIGEST_MONTH, occupancy: q.occupancy ?? null, next_step: d.nextStep.kind }} />
       <TopBar back={valueUrl} title="My Home" />
+      <JustSavedBanner homeId={id} />
       <h1>
         {b.name} · {q.unit || "unit"}
       </h1>
@@ -83,7 +101,7 @@ export default async function MyHome({ params, searchParams }: Props) {
           const qs = new URLSearchParams(Object.entries(sp).flatMap(([k, v]) => (k === "tab" || v == null ? [] : [[k, String(v)]])));
           if (t.id !== "update") qs.set("tab", t.id);
           return (
-            <Link key={t.id} href={`/own/${slug}/home?${qs}`} aria-current={tab === t.id ? "page" : undefined}>
+            <Link key={t.id} href={`/own/${slug}/home?${qs}`} replace scroll={false} aria-current={tab === t.id ? "page" : undefined} data-replace="true">
               {t.label}
             </Link>
           );
@@ -106,35 +124,39 @@ export default async function MyHome({ params, searchParams }: Props) {
 
       {tab === "update" ? (
       <>
-      {/* N1: all numbers in one block; news never sits between number cards. */}
-      <div className="digest" aria-label="Monthly update preview" data-block="numbers">
-        <div className="head">
-          <p className="meta">Your monthly update · {monthLabel(d.month)}</p>
-          <h2 style={{ margin: 0 }}>The numbers</h2>
+      {/* D2: next step and plans first; numbers once; alerts; then status and settings. News lives in the News tab. */}
+      <HomePanel
+        id={id}
+        fallback={fallback}
+        estimate={est}
+        marketRent={marketRent}
+        nextStep={{ kind: d.nextStep.kind, title: d.nextStep.title, illustrative: d.nextStep.illustrative }}
+        waLines={digestMessage(d, b.name, q.unit || "unit", `pf.ae/my-home/${slug}`)}
+      >
+        <div className="digest" aria-label="Monthly update preview" data-block="numbers">
+          <div className="head">
+            <p className="meta">Your monthly update · {monthLabel(d.month)}</p>
+            <h2 style={{ margin: 0 }}>The numbers</h2>
+          </div>
+          {d.order.map((k) => blocks[k])}
         </div>
-        {d.order.map((k) => blocks[k])}
-        <section>
-          <YieldBlock d={d} />
-        </section>
-        <MarketMoves items={marketMoves(resales, rents, b.name, q.rooms)} />
-        <section className="step">
-          <h3>Next step</h3>
-          <p>{d.nextStep.title}</p>
-          {d.nextStep.illustrative ? <Source kind="illustrative" /> : null}
-          {d.nextStep.kind !== "keep" ? (
-            <Link className="btn inline" href="#intent" style={{ marginTop: 8 }}>
-              Set my plans
-            </Link>
-          ) : null}
-        </section>
-      </div>
 
-      <WhatsAppPreview lines={digestMessage(d, b.name, q.unit || "unit", `pf.ae/my-home/${slug}`)} />
-
-      <HomePanel id={id} fallback={fallback} estimate={est} marketRent={marketRent} />
-
-      <hr className="divider" />
-      <AreaNewsBlock items={areaNews()} building={b.name} />
+        <AlertsInbox
+          homeId={id}
+          limit={1}
+          alerts={alertsForHome({
+            resales,
+            rents,
+            unit,
+            unitNumber: q.unit || "unit",
+            digest: d,
+            leaseEnd: q.occupancy === "let" ? q.leaseEnd : null,
+            fixedRateEnd: q.fixedRateEnd,
+            marketRent,
+            url: `pf.ae/my-home/${slug}`,
+          }).filter((a) => a.kind !== "news") /* D2: building news lives in the News tab only */}
+        />
+      </HomePanel>
       </>
       ) : null}
       <FooterNote />
@@ -179,8 +201,8 @@ function RentBlock({
       {(() => {
         const risk = renewalRiskNote(d.rent.ownerRent, s.median, s.count);
         return risk ? (
-          <p className="neg" data-testid="renewal-risk">
-            {risk}
+          <p className="callout warn" data-testid="renewal-risk">
+            <span aria-hidden>!</span> {risk}
           </p>
         ) : null;
       })()}
@@ -234,23 +256,26 @@ function DealsBlock({ d, rooms }: { d: Digest; rooms: number }) {
         </p>
       )}
       {d.deals.all.length ? (
-        <ul className="list meta">
-          {d.deals.all.slice(0, 5).map((r) => (
+        <details>
+          <summary className="meta">Show all {d.deals.all.length}</summary>
+          <ul className="list meta">
+            {d.deals.all.map((r) => (
             <li key={r.id} className="deal">
-              <span>
-                {dateLabel(r.date)}
-                <span className="meta">
-                  {r.rooms != null ? roomsLabel(r.rooms) : "–"}, {sqm(r.size_sqm)}
-                  {bulkLabel(r.bulkCount)}
+                <span>
+                  {dateLabel(r.date)}
+                  <span className="meta">
+                    {r.rooms != null ? roomsLabel(r.rooms) : "–"}, {sqm(r.size_sqm)}
+                    {bulkLabel(r.bulkCount)}
+                  </span>
                 </span>
-              </span>
-              <span className="price">
-                {aed(r.value_aed, { compact: true })}
-                <span className="meta">{aed(pricePerSqm(r), { compact: true })}/m²</span>
-              </span>
-            </li>
-          ))}
-        </ul>
+                <span className="price">
+                  {aed(r.value_aed, { compact: true })}
+                  <span className="meta">{aed(pricePerSqm(r), { compact: true })}/m²</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </details>
       ) : null}
       <p className="meta">3-month median for units like yours: {d.deals.rollingPerSqm ? aed(d.deals.rollingPerSqm) : "–"} / m².</p>
       <Source kind="dld" />
@@ -258,7 +283,7 @@ function DealsBlock({ d, rooms }: { d: Digest; rooms: number }) {
   );
 }
 
-function CapitalBlock({ d }: { d: Digest }) {
+function CapitalBlock({ d, method, pricePaid }: { d: Digest; method: Parameters<typeof MethodSheet>[0] | null; pricePaid: number | null }) {
   const c = d.capital;
   return (
     <section>
@@ -278,7 +303,13 @@ function CapitalBlock({ d }: { d: Digest }) {
           Vs what you paid, incl. the 4% DLD fee: <span className={c.gain >= 0 ? "pos" : "neg"}>{aed(roundEstimate(c.gain), { compact: true })}</span>.
         </p>
       ) : null}
+      <GoldenVisaLine estimate={c.value} pricePaid={pricePaid} />
       <Source kind="estimate" />
+      {method ? (
+        <p className="meta" style={{ marginTop: 4 }}>
+          <MethodSheet {...method} />
+        </p>
+      ) : null}
     </section>
   );
 }

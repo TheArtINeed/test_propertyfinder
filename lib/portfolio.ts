@@ -45,8 +45,10 @@ export function urgency(line: Pick<PortfolioLine, "nextStep" | "daysToLeaseEnd">
       return line.daysToLeaseEnd != null && line.daysToLeaseEnd < 0 ? 0 : 1;
     case "renewal_risk":
       return 2;
-    case "open_to_offers":
+    case "refinance":
       return 3;
+    case "open_to_offers":
+      return 4;
     default:
       return null;
   }
@@ -128,4 +130,36 @@ export function parsePortfolioHomes(body: unknown): PortfolioHome[] | string {
     });
   }
   return out;
+}
+
+/** P1: homes most in need of attention first; the rest keep their order. */
+export function sortByUrgency<T extends Pick<PortfolioLine, "nextStep" | "daysToLeaseEnd">>(lines: T[]): T[] {
+  return lines
+    .map((l, i) => ({ l, i, u: urgency(l) ?? 9 }))
+    .sort((a, b) => a.u - b.u || a.i - b.i)
+    .map((x) => x.l);
+}
+
+/**
+ * One count everywhere: the number of SAVED homes. When some cannot be valued yet,
+ * the value line says which part of the portfolio the total covers.
+ */
+export function portfolioCount(saved: number, valued: number): { label: string; valueNote: string | null } {
+  return {
+    label: `${saved} ${saved === 1 ? "home" : "homes"}`,
+    valueNote: valued < saved ? `Value for ${valued} of ${saved} homes; the others are not valued yet` : null,
+  };
+}
+
+/** Saved homes the summary could not value (unknown building or no comparables). */
+export function unvaluedIds(savedIds: string[], summary: Pick<Portfolio, "lines"> | null): string[] {
+  if (!summary) return [];
+  const valued = new Set(summary.lines.map((l) => l.id));
+  return savedIds.filter((id) => !valued.has(id));
+}
+
+/** G1 for the portfolio: combined price paid only when every home has one (DLD looks at purchase values). */
+export function combinedPricePaid(homes: { pricePaid?: number | null }[]): number | null {
+  if (!homes.length || homes.some((h) => !h.pricePaid)) return null;
+  return homes.reduce((s, h) => s + (h.pricePaid ?? 0), 0);
 }

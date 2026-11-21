@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { SessionStart } from "./components/client";
+import { NavTracker } from "./components/back";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -14,6 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <SessionStart />
+        <NavTracker />
         {children}
       </body>
     </html>

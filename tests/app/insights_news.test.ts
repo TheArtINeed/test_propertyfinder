@@ -107,7 +107,7 @@ describe("news feed (V7, V8)", () => {
     const top = n.find((x) => x.id.startsWith("deal-top"))!;
     expect(top.title).toBe("New 2026 high: a 1BR sold for AED 1.3M");
     expect(top.impact).toBe("up");
-    expect(n.find((x) => x.id.startsWith("rent-"))!.title).toBe("2 new leases signed, median AED 95K a year");
+    expect(n.find((x) => x.id.startsWith("rent-"))!.title).toBe("2 new leases signed (all sizes), median AED 95K a year"); // spec v14 D2: scope named
   });
 
   it("illustrative items and posts are marked as such; feed is newest first", () => {

@@ -1,23 +1,20 @@
 import Link from "next/link";
 import { loadSnapshot } from "@/lib/data";
 import { monthlyPerSqm, valuationInsights, windowLabel } from "@/lib/insights";
-import { ReadingCard } from "../../../components/insights";
+import { ReadingSummary } from "../../../components/insights";
 import { PriceChart } from "../../../components/price-chart";
-import { estimateValue, findBuilding, outlook, pricePerSqm, type CompLevel } from "@/lib/market";
+import { estimateValue, findBuilding, outlook, pricePerSqm, type CompLevel, COMP_LEVEL_TEXT } from "@/lib/market";
 import { parseUnitQuery } from "@/lib/owner";
 import { aed, bulkLabel, dateLabel, pct, roomsLabel, roundEstimate, sqm } from "@/lib/format";
 import { DealList, GetMonthly, Track } from "../../../components/client";
+import { MethodSheet } from "../../../components/alerts";
 import { updatePreview, IMPACT_WORD } from "@/lib/news";
 import { Icon } from "../../../icons";
 import { BuildingNotFound, ComingSoon, Empty, FooterNote, MissingUnit, Source, TopBar } from "../../../ui";
 
 type Props = { params: Promise<{ building: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
 
-const LEVEL_TEXT: Record<CompLevel, string> = {
-  building_rooms: "same building, same bedrooms, similar size",
-  building_any: "same building, all unit types (price per m²)",
-  jvc_rooms: "JVC, same bedrooms and similar size",
-};
+const LEVEL_TEXT = COMP_LEVEL_TEXT;
 
 export default async function Valuation({ params, searchParams }: Props) {
   const { building: slug } = await params;
@@ -107,10 +104,13 @@ export default async function Valuation({ params, searchParams }: Props) {
             {deals.length > 25 ? <p className="tiny">and {deals.length - 25} more</p> : null}
             <Source kind="dld" />
           </DealList>
+          <p className="meta" style={{ marginTop: 8 }}>
+            <MethodSheet comps={deals.length} windowText={`${windowLabel(est.comps.window)} 2026`} levelText={LEVEL_TEXT[est.comps.level]} confidence={est.confidence} />
+          </p>
         </div>
       </div>
 
-      <ReadingCard reading={reading} limit={4} />
+      <ReadingSummary reading={reading} />
 
       <div className="card">
         <PriceChart series={series.series} title={series.title} />
@@ -134,6 +134,7 @@ export default async function Valuation({ params, searchParams }: Props) {
       <GetMonthly
         ctx={{ slug, building: b.name, unitNumber: q.unit, rooms: q.rooms, sizeSqm: q.sizeSqm }}
         prefillPaid={q.pricePaid}
+        from={q.from}
       />
       <FooterNote />
     </main>

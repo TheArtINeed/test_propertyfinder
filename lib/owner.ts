@@ -44,7 +44,8 @@ export interface Subscription {
   since: string;
 }
 export const CHANNEL_LABEL: Record<Channel, string> = { whatsapp: "WhatsApp", email: "Email", in_app: "In-app only" };
-export const FREQUENCY_LABEL: Record<Frequency, string> = { monthly: "Every month", big_changes: "Only big changes" };
+/** A3: events first; the monthly update is the fallback. */
+export const FREQUENCY_LABEL: Record<Frequency, string> = { monthly: "Monthly update + important events", big_changes: "Only important events" };
 
 /** Next digest: the 1st of the month after today. */
 export function nextUpdateDate(today = AS_OF): string {
@@ -156,6 +157,8 @@ export const homeId = (slug: string, unitNumber: string) => `${slug}#${unitNumbe
 /** Storage keys: everything the owner leaves lives under this prefix (O9 delete). */
 export const PREFIX = "pf.";
 const HOMES = PREFIX + "homes";
+/** localStorage key of the saved homes list. */
+export const HOMES_KEY = HOMES;
 const LEADS = PREFIX + "leads";
 
 type KV = Pick<Storage, "getItem" | "setItem" | "removeItem" | "key" | "length">;
@@ -266,7 +269,36 @@ export function parseUnitQuery(q: Record<string, string | string[] | undefined>)
     loan: inRange(num("loan"), [LIMITS.loan[0], Math.min(LIMITS.loan[1], inRange(num("paid"), LIMITS.price) ?? LIMITS.loan[1])]),
     annualRent: inRange(num("rent"), LIMITS.rent),
     leaseEnd: /^\d{4}-\d{2}-\d{2}$/.test(one("leaseEnd") ?? "") && one("leaseEnd")! >= AS_OF ? one("leaseEnd")! : null,
+    // H1: mortgage rate in % (0-20) and the end of the fixed-rate period (not in the past)
+    mortgageRate: (() => {
+      const r = Number(one("rate"));
+      return Number.isFinite(r) && r > 0 && r <= LIMITS.rate[1] ? r / 100 : null;
+    })(),
+    fixedRateEnd: /^\d{4}-\d{2}-\d{2}$/.test(one("fixedEnd") ?? "") && one("fixedEnd")! >= AS_OF ? one("fixedEnd")! : null,
     occupancy: one("occ") === "let" ? ("let" as const) : one("occ") === "live" ? ("live" as const) : undefined,
     from: one("from") ?? null,
   };
+}
+
+/** P10: sessionStorage key set right after saving a home, read once by My Home's banner. */
+export const JUST_SAVED_KEY = "pf.justSaved";
+
+/** P4: the demo unit number, or the next free one, so adding a home never overwrites a saved one. */
+export function nextFreeUnit(homes: Pick<Home, "id">[], slug: string, start: string): string {
+  const taken = new Set(homes.map((h) => h.id));
+  let n = Number(start);
+  if (!Number.isFinite(n)) return start;
+  while (taken.has(homeId(slug, String(n)))) n++;
+  return String(n);
+}
+
+/** P3: where "Add a home" leads. Only pilot apartments get a PropWorth estimate today. */
+export type AddType = "apartment" | "villa" | "office";
+export function addHomePath(type: AddType, where: "pilot" | "other"): { kind: "valuation"; href: string } | { kind: "coming_soon" } {
+  return type === "apartment" && where === "pilot" ? { kind: "valuation", href: "/own/luma-park-views?from=propworth" } : { kind: "coming_soon" };
+}
+
+/** P10: after saving, go back to the portfolio when the user came from it, else to the new home. */
+export function afterSavePath(from: string | null | undefined, id: string, homeHref: string): string {
+  return from === "propworth" ? `/propworth?added=${encodeURIComponent(id)}` : homeHref;
 }

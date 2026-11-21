@@ -73,7 +73,7 @@ describe("W14: PropWorth summary across homes", () => {
     expect(urgency({ nextStep: step("relet"), daysToLeaseEnd: -1 })).toBe(0);
     expect(urgency({ nextStep: step("relet"), daysToLeaseEnd: 30 })).toBe(1);
     expect(urgency({ nextStep: step("renewal_risk"), daysToLeaseEnd: 300 })).toBe(2);
-    expect(urgency({ nextStep: step("open_to_offers"), daysToLeaseEnd: null })).toBe(3);
+    expect(urgency({ nextStep: step("open_to_offers"), daysToLeaseEnd: null })).toBe(4); // spec v15 H1: refinance (3) ranks before offers
     expect(urgency({ nextStep: step("keep"), daysToLeaseEnd: null })).toBeNull();
   });
 

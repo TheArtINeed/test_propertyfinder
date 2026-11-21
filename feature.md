@@ -100,3 +100,30 @@ Description of every feature developed in this project. Add an entry for each ne
 ## Data and measurement doc
 - `docs/DATA.md`: metric tree (one number, owner / renter / buyer funnels mapped to the prototype's events, valuation quality, revenue), guardrails, data from other PF teams, data handling and infrastructure. Linked from `ONE-PAGER.md`.
 - Tests: `tests/app/data_doc.test.ts` (every event named in the doc exists in `lib/events.ts` and is sent by the app).
+
+## Trust and event alerts (`docs/SPEC.md` section 19)
+- A1 "How we estimate" sheet from the valuation and My Home: the comparables used (count, window, level, confidence), what the estimate does not know (floor, view, condition, unit), and "Agents, listings and whether you sell do not change it".
+- A2/A3 event alerts (`lib/alerts.ts`): new resale in the building, new-lease rents moving more than 5% in 3 months, lease milestones (90 / 30 days, ended), news with a price impact (illustrative), monthly update as the fallback. "Your alerts" on My Home shows them as push, WhatsApp or email, each with "Why you got this" and a source. Frequency options: "Monthly update + important events" / "Only important events".
+- A4 long-term vision line in `ONE-PAGER.md`.
+- Tests: `tests/app/v12.test.tsx` (each trigger at its threshold, previews and sources, page order, labels, vision line).
+
+## PropWorth portfolio: find, compare, add (`docs/SPEC.md` section 18, P0 + P9, P10)
+- `/propworth`: total value, rent in, yield, then a card per home (value, status, rent, lease end, yield, next step), most urgent first; empty state with "Get your first PropWorth estimate".
+- Always reachable: "PropWorth · N" pill in the top bar once a home is saved; first-screen main button becomes "Open my PropWorth (N homes)"; first screen shows an empty "Your PropWorth · 0 homes" card and an "All your homes in one PropWorth" benefit.
+- Along the way: the save sheet says the home goes into PropWorth ("Own more homes? You can add them next", no extra step before saving); My Home shows "Saved to your PropWorth · N homes" once after saving, with "See all homes" and "+ Add another home" (P11).
+- "+ Add a home" chooser (type, location): pilot apartment -> valuation with "Add a home to your PropWorth" context, unit number pre-set to the next free one, then back to `/propworth` with "Added … N homes, total …"; other types / places -> "coming soon" + notify me. Not built: manual homes with the owner's own value (P5, P6), remove from the portfolio (P8).
+- Files: `app/propworth/page.tsx`, `app/components/portfolio.tsx`, `lib/owner.ts` (`nextFreeUnit`, `addHomePath`, `afterSavePath`), `lib/portfolio.ts` (`sortByUrgency`). Tests: `tests/app/portfolio_ux.test.tsx`.
+- Counts: every place (top-bar pill, first-screen button and card, post-save banner, `/propworth`) counts saved homes (`portfolioCount`); homes that cannot be valued stay listed as "PropWorth estimate coming soon" and the total says "Value for N of M homes". Counts refresh across tabs, on back-navigation and when the tab returns (`app/components/use-homes.ts`, homes key only).
+
+## Design review batch A (`docs/SPEC.md` section 21: D1, D2, D3, D10; plus D5, D7)
+- D1 valuation: "Get this every month" pinned to the bottom (visible on load at 375 x 812); "What this means" as one line per reading with "See the analysis" for the full readings (`ReadingSummary`, `AnalysisToggle`).
+- D2 My Home Update: next step inside the plans card at the top; Rent, Deals (top 3 + "Show all"), Capital + yield, Demand; latest 2 own-event alerts ("See all"); one Settings card (status, update settings with the WhatsApp preview, remove / delete). Market moves and building news only in the News tab; plans no longer repeat the rent median. About 3.5 screens on the demo home (was about 7).
+- D3 Back returns to the previous in-app screen (falls back to the parent screen on a deep link); My Home tabs do not add history entries (`app/components/back.tsx`).
+- D10 first screen: promise + one link each to owner, renter, buyer flows; PropWorth card only with saved homes; no pitch blocks or `/entry-points` link in the app. D5 sources as plain text; D7 renewal warning as a one-sentence warning callout.
+- Tests: `tests/app/dom_back.test.tsx`, D-tests in `smoke`, `v7`, `v8`, `v10`, `v12`, `portfolio_ux`, `mobile_css` (old first-screen and placement tests replaced, each marked with the spec item).
+
+## Batch B (`docs/SPEC.md` sections 20 and 22: G1, H2, H1)
+- G1 Golden Visa line in My Home (capital) and both PropWorth summaries: "may qualify" only on a price paid of AED 2M+ (DLD's page uses the purchase value), "worth 2M+ today, check with DLD" on the estimate, or the gap when within 25%; link to the DLD service (`goldenVisa`, `app/components/golden-visa.tsx`).
+- H2 taken units for renters: "Let agreed · date" or "No longer for rent", greyed, no viewing button, listed last; a notice when a unit the renter asked to view is taken (`listingState`, `withStates`, `takenRequests` in `lib/renter.ts`).
+- H1 refinance: mortgage details in the Status sheet; next step "Your fixed rate ends in N months: you could save about AED X a month" (or "compare mortgage offers") after the lease rules; "Compare mortgage offers" lead sheet; alerts 6 and 3 months before the fixed rate ends (`refinance` in `lib/finance.ts`, `refiAlert`).
+- Tests: `tests/app/batch_b.test.tsx`, `tests/app/dom_taken.test.tsx`.

@@ -71,11 +71,11 @@ import { buyAdvice } from "@/lib/insights";
 import { readFileSync } from "node:fs";
 
 describe("W1, W2: brief compliance", () => {
-  it("'I rent' sits in the first-screen hero, before 'What you get'", async () => {
+  // Updated for spec v14 D10: "What you get" is gone; "I rent" stays in the hero.
+  it("'I rent' sits in the first-screen hero", async () => {
     const h = await html(<Home />);
-    const rentBtn = h.indexOf('href="/rent">I rent: is my rent fair?');
-    expect(rentBtn).toBeGreaterThan(0);
-    expect(rentBtn).toBeLessThan(h.indexOf("What you get"));
+    const hero = h.slice(h.indexOf('class="hero"'), h.indexOf("</section>"));
+    expect(hero).toContain('href="/rent">I rent: is my rent fair?');
   });
   it("no 'Why it works' in the app; README lists the entry points", async () => {
     expect(await html(<EntryPoints />)).not.toContain("Why it works");

@@ -203,6 +203,54 @@
   </div>
 </section>
 
+<!-- 5. Sold -> search again -->
+<section class="frame" id="f5">
+  <div class="status"><span>9:41</span><span>●●● 5G ▮</span></div>
+  <div class="appbar"><span style="color:var(--sec)">‹ PropWorth</span><span class="meta">Archived</span></div>
+  <div class="content">
+    <span class="badge green">Sold · 15 Mar 2027</span>
+    <div class="h2" style="margin-top:8px">Luma Park Views · 1204</div>
+    <p class="meta">1BR · 80 m²</p>
+    <div class="card">
+      <div class="kv" style="border:0"><span>Sold for</span><b>AED 1,310,000</b></div>
+      <div class="kv"><span>Last PropWorth estimate</span><b>AED 1.21M – 1.34M</b></div>
+      <div class="kv"><span>You bought for</span><b>AED 1,100,000</b></div>
+      <div class="kv"><span>Gain before fees</span><b style="color:var(--success)">+19%</b></div>
+      <p class="tiny">Archived in your PropWorth. Sale price from your entry.</p>
+    </div>
+    <div class="card" style="background:var(--sec-100);border-color:var(--sec-200)">
+      <div class="h3">Looking for your next home?</div>
+      <p class="meta">After the loan and agent fee you have about AED 680K. With a mortgage that buys a home up to about <b>AED 2.8M</b>.</p>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+        <span class="btn red">2 bed in JVC up to AED 2.8M</span>
+        <span class="btn out">Townhouses near JVC</span>
+      </div>
+      <p class="tiny" style="margin-top:8px">Searches prefilled from your sale. Estimate, not advice.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 6. Home services in My Home -->
+<section class="frame" id="f6">
+  <div class="status"><span>9:41</span><span>●●● 5G ▮</span></div>
+  <div class="appbar"><span style="color:var(--sec)">‹ PropWorth</span><b style="font-size:14px">My Home · 1204</b><span></span></div>
+  <div class="content">
+    <p class="meta">For you this month</p>
+    <div class="card" style="margin-top:8px">
+      <span class="badge teal">Mortgage · fixed rate ends in 4 months</span>
+      <div class="h3" style="margin-top:8px">You could save about AED 250 a month</div>
+      <p class="meta">Loan AED 600K at 5.25% vs an example rate of 4.5%, 20 years left. About AED 3,000 a year.</p>
+      <span class="btn red" style="margin-top:12px">Compare mortgage offers</span>
+      <p class="tiny" style="margin-top:8px">Example rate. Offers from PF mortgage partners.</p>
+    </div>
+    <div class="section-title">Other services for your home</div>
+    <div class="listing" style="align-items:center"><div class="thumb" style="width:40px;height:40px"></div><div style="flex:1"><b style="font-size:14px">Find a tenant for 1 Feb</b><div class="meta">Your lease ends 31 Jan · property management</div></div><span style="color:var(--sec)">›</span></div>
+    <div class="listing" style="align-items:center"><div class="thumb" style="width:40px;height:40px"></div><div style="flex:1"><b style="font-size:14px">Renew Ejari online</b><div class="meta">When your tenant renews</div></div><span style="color:var(--sec)">›</span></div>
+    <div class="listing" style="align-items:center"><div class="thumb" style="width:40px;height:40px"></div><div style="flex:1"><b style="font-size:14px">Landlord insurance</b><div class="meta">Rent default and contents cover</div></div><span style="color:var(--sec)">›</span></div>
+    <div class="listing" style="align-items:center"><div class="thumb" style="width:40px;height:40px"></div><div style="flex:1"><b style="font-size:14px">Cleaning and repairs</b><div class="meta">Before the next tenant moves in</div></div><span style="color:var(--sec)">›</span></div>
+  </div>
+</section>
+
 <script>
   const f = new URLSearchParams(location.search).get("f") || "1";
   document.getElementById("f" + f).classList.add("on");

@@ -117,3 +117,68 @@ export function mockDemand(rooms: number, estimate: number, month: string): Dema
     label: "Illustrative: based on PF searches in production",
   };
 }
+
+/**
+ * G1 (spec v13, adjusted at build): AED 2M Golden Visa threshold.
+ * DLD's own service page states the PURCHASE value must be AED 2M or more (mortgaged: a bank letter that 2M is paid):
+ * https://dubailand.gov.ae/en/eservices/request-for-golden-visa-investor/ . Some guides say a current valuation can count.
+ * So: price paid >= 2M -> "may qualify"; estimate >= 2M only -> "worth 2M+ today, check with DLD";
+ * estimate within 25% below 2M -> the gap; else nothing.
+ */
+export const GOLDEN_VISA_AED = 2_000_000;
+export const GOLDEN_VISA_DLD_URL = "https://dubailand.gov.ae/en/eservices/request-for-golden-visa-investor/";
+export type GoldenVisa =
+  | { kind: "may_qualify"; basis: "price_paid" }
+  | { kind: "value_above"; basis: "estimate" }
+  | { kind: "gap"; gap: number }
+  | { kind: "none" };
+
+export function goldenVisa(estimate: number, pricePaid?: number | null): GoldenVisa {
+  if (pricePaid != null && pricePaid >= GOLDEN_VISA_AED) return { kind: "may_qualify", basis: "price_paid" };
+  if (estimate >= GOLDEN_VISA_AED) return { kind: "value_above", basis: "estimate" };
+  const gap = GOLDEN_VISA_AED - estimate;
+  if (gap / GOLDEN_VISA_AED < 0.25) return { kind: "gap", gap };
+  return { kind: "none" };
+}
+
+/**
+ * H1 (spec v15): refinance as a next step for owners with a loan.
+ * Due when the fixed-rate period ends within 6 months, or the current rate is at least 0.5 pp above the example rate.
+ * Saving = monthly payment at the current rate minus at the example rate, on the loan balance over the remaining term.
+ */
+export const REFI_MONTHS = 6;
+export const REFI_RATE_GAP = 0.005;
+export const REFI_TERM_YEARS = 20;
+
+export interface Refinance {
+  due: boolean;
+  monthsToFixedEnd: number | null;
+  rateGap: number | null; // current - example rate
+  saving: number | null; // AED per month, > 0 only
+}
+
+export function refinance(input: { loan?: number | null; mortgageRate?: number | null; fixedRateEnd?: string | null; today: string; marketRate?: number }): Refinance | null {
+  const loan = input.loan ?? 0;
+  if (!(loan > 0) || (input.mortgageRate == null && !input.fixedRateEnd)) return null;
+  const market = input.marketRate ?? EXAMPLE_RATE;
+  let monthsToFixedEnd: number | null = null;
+  if (input.fixedRateEnd) {
+    const [y, m] = input.today.split("-").map(Number);
+    const [fy, fm] = input.fixedRateEnd.split("-").map(Number);
+    monthsToFixedEnd = (fy - y) * 12 + (fm - m);
+  }
+  const rateGap = input.mortgageRate != null ? input.mortgageRate - market : null;
+  const savingRaw =
+    input.mortgageRate != null ? monthlyPayment(loan, input.mortgageRate, REFI_TERM_YEARS) - monthlyPayment(loan, market, REFI_TERM_YEARS) : null;
+  const saving = savingRaw != null && savingRaw > 0 ? savingRaw : null;
+  const fixedSoon = monthsToFixedEnd != null && monthsToFixedEnd >= 0 && monthsToFixedEnd <= REFI_MONTHS;
+  const rateHigh = rateGap != null && rateGap >= REFI_RATE_GAP - 1e-9;
+  return { due: fixedSoon || rateHigh, monthsToFixedEnd, rateGap, saving };
+}
+
+export function refinanceTitle(r: Refinance): string {
+  const save = r.saving ? `: you could save about AED ${Math.round(r.saving / 50) * 50} a month` : ": compare mortgage offers";
+  if (r.monthsToFixedEnd != null && r.monthsToFixedEnd >= 0 && r.monthsToFixedEnd <= REFI_MONTHS)
+    return `Your fixed rate ends in ${r.monthsToFixedEnd} ${r.monthsToFixedEnd === 1 ? "month" : "months"}${save}`;
+  return `Your mortgage rate is above today's offers${save}`;
+}

@@ -1,6 +1,6 @@
 # Dev spec: PropWorth "My Home" prototype
 
-Status: draft v10, 2026-11-21 (v10 as-built audit: section 17; v4 review changes: section 11; v5 demo prefill: section 12; v6 sanity checks: section 13; v7 return and lead loop, separate news: section 14; v8 review fixes: section 15; v9 update preview on the valuation: section 16). Scope = what we build in the timed task (~3 h). Business framing will live in `ONE-PAGER.md` (to be written). Support cases are detailed in `prep/support_cases_spec.md`; section 9 here is the single list of all cases with v2 priorities.
+Status: draft v14, 2026-11-21 (v14 design review: section 21; v13 Golden Visa, listings in my building, my dates: section 20; v12 trust and event alerts: section 19; v11 PropWorth portfolio: section 18; v10 as-built audit: section 17; v4 review changes: section 11; v5 demo prefill: section 12; v6 sanity checks: section 13; v7 return and lead loop, separate news: section 14; v8 review fixes: section 15; v9 update preview on the valuation: section 16). Scope = what we build in the timed task (~3 h). Business framing will live in `ONE-PAGER.md` (to be written). Support cases are detailed in `prep/support_cases_spec.md`; section 9 here is the single list of all cases with v2 priorities.
 
 ## 1. Idea in one line
 A resale buyer's search does not end at the key handover: after the PropWorth valuation, the unit becomes **"My Home"**, and every month the owner gets a **digest** tied to money that moves anyway (rent in, mortgage out): rents and deals in the building, demand for a unit like theirs, and one next step. The owner sets an **intent** ("rent out from / open to offers from X / not now"), which becomes a qualified lead for agents and an **"owner-confirmed"** signal for renters.
@@ -315,3 +315,134 @@ Added after an audit of `done_log.md` and the code. Where this section and an ea
 **Not built (as of v1 hand-in):** R6 break / move / negotiate, O4 "I think it's worth", C4 "Something wrong?", C5 mock sign-in, W15 one digest for all homes, LLM wording. O5 is a list on the first screen only. O7 (channel and frequency on My Home) and R5 ("Request a viewing") are built; README corrected.
 
 Live: https://test-propertyfinder.vercel.app
+
+## 18. v11: PropWorth as a portfolio (all homes, add a home, other property types)
+Review of O5 / W14 as built: the summary works, but an investor with several units cannot easily **find** it, **compare** homes or **add** one that is not in the pilot building.
+
+**What is hard today**
+1. The portfolio (W14 card) lives only on the first screen, below the hero, and appears only after the first save. From My Home there is no way to "all my homes" except the Home icon.
+2. The homes list shows unit and size only: no value, rent, status or next step, so comparing means opening each home.
+3. "+ Add a home" is a small grey link that starts the first-time valuation flow with no portfolio context and no confirmation that the home was added.
+4. Only units in Luma Park Views can be added. A villa, a flat in another building or another emirate cannot be tracked, so the total is incomplete and the portfolio feels like a demo.
+
+**Changes**
+
+| ID | Change | Acceptance | Priority |
+|---|---|---|---|
+| P1 | **`/propworth` page = the portfolio**: W14 summary on top (total value range, rent in, gross yield, "Needs attention"), then one card per home: name, type, value range, status (let / live / for sale), rent and lease end if let, yield, next step chip; sorted by urgency (same rules as `urgency`). Each card opens that home's My Home | Page renders 1 and 3 homes from fixtures; order follows urgency; `portfolio_opened` | P0 |
+| P2 | **Always one tap away**: owner pages (valuation, My Home and its tabs) show a "PropWorth · N homes" pill in the top bar when N >= 1, linking to `/propworth`. On the first screen, when the user has homes, the hero CTA becomes "Open my PropWorth (N homes)" and the W14 card shows the summary plus "See all homes" | Pill visible on My Home with 1+ homes, hidden with 0; first-screen CTA switches; tested | P0 |
+| P3 | **"Add a home" is a clear action**: a full-width secondary button at the end of `/propworth` and in its header. It opens a short chooser: (a) property type: Apartment / Villa or townhouse / Office or shop; (b) where: Luma Park Views (pilot) / another building or area | Chooser renders; each path leads to P4 or P5; `home_add_started` (type, where) | P0 |
+| P4 | **Pilot path**: apartment in Luma Park Views -> the existing unit picker and valuation, with context "Adding to your PropWorth"; after "Save" the user returns to `/propworth` with a confirmation "Added. 2 homes, total AED x – y" | Return lands on `/propworth`; new home in the list and the totals | P0 |
+| P5 | **Any other home: "Track with my own value"**: building or area (free text, plus emirate), type, bedrooms, size, owner's value (O4), optional rent, lease end, price paid, loan. Saved as a manual home labelled "Owner's value · PropWorth estimate coming soon"; it counts in the totals with its own value; joins the waitlist for its building or area. Same sanity rules (section 13); demo prefill (section 12): "Villa, JVC, 3BR, 250 m², AED 3,200,000" | Manual home saved, listed, labelled; totals include it and say "includes owner's values for N homes"; `manual_home_saved`, `waitlist_joined`; tested | P1 |
+| P6 | **Totals with mixed sources**: value total = PropWorth estimates + owner's values (shown separately on tap); rent and yield only over let homes; "Needs attention" can come from manual homes too (lease end, renewal) | Sums correct on a 2-pilot + 1-manual fixture; labels say which part is owner's value | P1 |
+| P7 | **Empty state** on `/propworth` with 0 homes: what PropWorth is in one line + "Get your first PropWorth estimate" | No dead end; tested | P0 |
+| P8 | **Manage**: remove a home from `/propworth` (reuses O9 with confirmation); "Delete all my data" stays on My Home and `/privacy` | Removed home leaves the list and the totals | P1 |
+
+| P9 | **Visible from the start**: the first screen says in "What you get" that all your homes live in one PropWorth (value, rent, what needs attention), and shows an empty PropWorth card ("0 homes, add your first") instead of hiding it until the first save | Card and benefit line render with 0 homes; tested | P0 |
+| P10 | **Visible along the way**: the save sheet says "This home goes into your PropWorth: all your homes in one place"; right after saving, My Home shows a banner "Saved to your PropWorth · N homes · See all homes"; adding from `/propworth` returns there (P4) | Banner shows once after save; links to `/propworth`; tested | P0 |
+
+| P11 | **Ask for more homes after the save, not before**: the subscribe sheet keeps one decision (no extra step before "Get this every month", the conversion the 1% test measures) and only notes "Own more homes? You can add them next"; the post-save banner on My Home offers "+ Add another home", which opens the add chooser (P3) | No new step before saving; banner has both "See all homes" and "+ Add another home"; tested | P0 |
+
+Build note (v11 build): P5 manual homes and P8 remove are not in this build; the chooser's non-pilot paths show "coming soon" with "Notify me" (existing waitlist) until P5 is built.
+
+- Unchanged: W15 one monthly digest for all homes stays P1; real estimates for villas, other buildings and other emirates stay P2 (X6).
+- Events: `portfolio_opened`, `home_add_started`, `manual_home_saved` (with the existing `waitlist_joined`).
+- Not real (README): manual homes use the owner's own value, not a PropWorth estimate.
+- Cut order: P1, P2, P7 -> P3, P4 -> P5, P6 -> P8.
+
+## 19. v12: trust and event alerts (after an external product review)
+An external Product Lead review rated vision 9/10 but retention 6/10 and flagged trust. Taken: trust in the estimate (method + independence), retention by events rather than the calendar, and a long-term vision line. Not taken: dropping the renter flow (the brief requires it from the first screen), a separate app (My Home lives inside PF and continues PropWorth), "top N% in your building" (needs floor / view data we do not have), narrowing the range (it is the honest spread of real deals).
+
+| ID | Change | Acceptance | Priority |
+|---|---|---|---|
+| A1 | **"How we estimate" sheet** from the valuation and from My Home: comparables (same building, same bedrooms, size +-15%, last 3 full months), fallbacks and confidence, same-day bulk deals counted once, range = middle half of deals (at least +-4%); **what it does not know**: floor, view, condition, unit number (DLD open data has none). **Independence line**: "The estimate comes only from registered deals. Agents, listings and whether you sell do not change it." | Sheet opens from both screens; lists the real comps count and window; independence line present; `method_viewed`; tested | P0 |
+| A2 | **Event alerts, the monthly update is the fallback** (`lib/alerts.ts`, pure, tested). Triggers from the data and the owner's details: (1) new resale in the building in the month (top deal), (2) new-lease median for the size band moved more than 5% vs the previous 3 months, (3) lease milestones: 90 days, 30 days, ended, (4) building and area news with a price impact (illustrative), (5) monthly update on the 1st. Each alert has a channel preview: push (title + 1 line), WhatsApp (2 lines + link), email (subject) and "Why you got this". | Triggers fire at their thresholds on fixtures; each alert has all three previews; illustrative ones labelled | P0 |
+| A3 | **"Your alerts" on My Home (Update tab, after the plans card)**: the alerts this home would have received, newest first, shown as phone notifications in the chosen channel; frequency labels become "Monthly update + important events" / "Only important events" (O7) | Renders the triggered alerts for the demo home; the channel switch changes the preview; `alert_opened` | P0 |
+| A4 | **Vision line** in `ONE-PAGER.md`: long term, PropWorth can be for homes what a market terminal is for financial assets (value, yield, risk and options of one asset in one place); this task builds its first owner habit | One sentence, no new claims or numbers | P1 |
+
+- Not real (README): alert delivery (push, WhatsApp, email) is simulated; the alerts list shows what would have been sent.
+- Existing mockup `docs/mockups/entry-1-monthly-push.png` stays the static lock-screen picture; A3 makes the same alerts clickable inside the prototype.
+
+## 20. v13: Golden Visa threshold, listings in my building, my dates
+Retention review: the strongest new reasons to open PF are (a) the AED 2M Golden Visa threshold, which turns the value into a personal goal, and (b) PF's own listings in my building, which change every week and no competitor or open source has. A "money calendar" mostly repeats what the digest already shows (lease end, renewal, capital), so only the missing dates are added, as optional fields.
+
+**Facts used (check before quoting numbers; rules change):** a property worth AED 2M or more can qualify for the 10-year Golden Visa; several guides say the current DLD valuation counts, not only the price on the title deed, with an official valuation certificate if the deed is below 2M ([Property Finder](https://www.propertyfinder.ae/blog/golden-visa-properties/), [The National](https://www.thenationalnews.com/business/money/2024/01/24/golden-visa-dubai-property/)); several properties can be combined; mortgage terms are reported differently (older rule: AED 1M or 50% paid; 2026 reports: minimum down payment dropped, bank NOC needed: [Khaleej Times](https://www.khaleejtimes.com/business/uae-golden-visa-dubai-drops-minimum-down-payment-required-for-property-owners)). So the UI never says "you qualify": it says "may qualify" and links to DLD.
+
+| ID | Change | Acceptance | Priority |
+|---|---|---|---|
+| G1 | **Golden Visa line** in My Home (Capital block) and in the PropWorth summary: at or above AED 2M (estimate mid, or the sum of homes in the summary): "Worth AED 2M or more: you may qualify for a 10-year Golden Visa"; below: "AED X to the AED 2M Golden Visa threshold" shown only when the gap is under 25%; link to the DLD Golden Visa service; note "Check current rules with DLD; mortgage terms vary". Pure function `goldenVisa(value)` in `lib/finance.ts` | Thresholds tested at 1.49M / 1.5M / 1.99M / 2M; summary uses the sum of homes; demo 2BR (AED 1.84-1.97M) shows the gap; 1204 + 1707 together show "may qualify"; `golden_visa_viewed` | P0 |
+| G2 | **Threshold crossing as an alert** (A2 trigger 6): the 3-month value change (W6) crosses AED 2M up or down -> "Your PropWorth crossed AED 2M" with the same caveat | Fires once per crossing on fixtures; never on month-on-month noise | P1 |
+| L1 | **"Your building this week"** on My Home (numbers block, after Deals): PF listings in the building like mine: new listing, price cut, days on market, asking price vs my estimate ("listed at AED 1.40M, your estimate AED 1.22-1.29M"). In the prototype from synthetic listings (`dataset/listings.json`), labelled "Illustrative: PF listings in production"; in production PF's own listings data. Also an A2 trigger (7): new listing or price cut in my building | Block renders for the demo home, labelled illustrative; never mixed with DLD deals; trigger tested; `building_listings_viewed` | P1 |
+| D1 | **"Your dates this month"** in the digest: tenant cheque dates, end of a fixed mortgage rate, service charge invoice; all optional fields in the "Get this every month" sheet and Status sheet; empty fields hide the line | Hidden when no dates; dates within 30 days listed; tested | P2 |
+
+- ONE-PAGER: one line each for the Golden Visa threshold (owner-occupiers too) and PF listings in the building as the production retention hook; building-management messages (Mollak, developers) and a verified building chat are later, via partners (P2: X12 building management messages, X13 verified owners' chat).
+- Events: `golden_visa_viewed`, `building_listings_viewed`.
+- Not real (README): listings in the building are synthetic; Golden Visa rules are summarised from public guides, not legal advice.
+- Cut order: G1 -> L1 -> G2 -> D1.
+
+
+## 21. v14: design review at 375 px (priorities, length, controls, navigation)
+Click-through of every screen at 375 px against the use-case priorities (section 1: investor-landlord first; funnel `valuation_viewed` -> `digest_subscribed` -> `intent_set` -> `lead_submitted`), `design.md` and the brief's "no pitch text or instructions inside the UI". The cross-tab event loop found in the same review is already fixed (homes hook listens to the homes key only).
+
+**P0: the main flow and navigation**
+
+| ID | Problem (as found) | Change | Acceptance |
+|---|---|---|---|
+| D1 | Valuation: "Get this every month" sits at ~2,100 of 2,370 px, below 4 readings, chart, outlook and preview. It is the conversion the 1% test measures | Sticky bottom CTA "Get this every month" on the valuation (hidden while the sheet is open). "What this means" shows the headline reading + one line per reading; full readings behind "See the analysis" (same content as the My Home Analysis tab). Chart stays, below the readings | CTA visible on first load at 375x812 without scrolling; page height on the demo unit at most ~2 screens before the preview card; tested |
+| D2 | My Home "Update" is ~5,500 px (~7 screens). The month's deals and rents appear 4 times (Deals list, Market moves, WhatsApp preview, alerts); building news appears in Update and in News; "21 new leases for your size" sits next to "24 new leases signed" (all sizes); "Next step" and plans start on screen 4 | Update order: value header -> **Next step + "What are your plans?"** -> Rent -> Deals (top 3 + "Show all N") -> Capital and yield -> Demand -> "Your alerts" (latest 2 + "See all") -> Status and update settings. Removed from Update: Market moves and building news (they live in the News tab only), WhatsApp preview (moves into the update settings "Change" sheet). Market moves "new leases" line names its scope ("all sizes") or uses the owner's size band | Next step in the first screen after the header; Update tab at most ~3 screens for the demo home; no number repeated within the tab; tested |
+| D3 | Back is a fixed link: My Home always goes to the valuation, even when opened from `/propworth` or "Needs attention"; `/buy` goes to `/` when opened from `/rent`; Back + browser back loop; every My Home tab adds a history entry | TopBar Back = `router.back()` when the previous page is in this app, else the fixed `href` (deep link fallback). My Home tabs switch with `replace` (no history entry per tab). `/buy` opened from `/rent` returns to the renter results | From `/propworth` -> My Home -> Back lands on `/propworth`; `/rent` results -> `/buy` -> Back lands on the results; tab switches do not grow history; tested |
+
+**P1: control states and design guide**
+
+| ID | Problem | Change | Acceptance |
+|---|---|---|---|
+| D4 | Advice lines "→ …" use the link colour `#3A307F` but are not clickable | Advice in `text-primary` with a small line icon, not link colour; only real links and buttons use indigo | No non-interactive element uses the link colour; tested on the readings component |
+| D5 | Source labels are tinted pills next to "High confidence" / "Good" badges and read as chips or filters | Sources as plain 12 px meta text (`text-secondary`), no pill; badges stay pills | Source labels have no background or pill radius |
+| D6 | Home cards on `/propworth` and the "Needs attention" row are links without a visible affordance | Chevron on every tappable card / row; pressed state | Every link card has a chevron |
+| D7 | Renewal-risk note in Rent is a long bold paragraph in the error colour | Warning callout (`#FFF6EA` bg, warning icon), one sentence: "New tenants pay ~AED 15K less. Plan the re-let near AED 80K." Error red only for errors | Callout uses warning tokens; tested text |
+| D8 | "At renewal the rent can go up by at most 0%" | 0% -> "No increase allowed at renewal"; other values unchanged | Wording at 0% tested |
+| D9 | Top bar: Back and Home both go to `/` on `/own`, `/propworth`, `/rent`, `/buy`; owner pill "PropWorth · N" shows in the renter and buyer flows; aria-label "1 homes" | Hide Home when Back already leads to `/`; show the PropWorth pill on owner screens and the first screen only; correct singular / plural | Tested per route |
+
+**P1: no pitch text or instructions in the UI (brief)**
+
+| ID | Problem | Change | Acceptance |
+|---|---|---|---|
+| D10 | First screen is ~3 screens: "What you get" (5 points), sample update, "How it works", "Why save it?", "Not an owner?" (repeats "I rent"), link to `/entry-points` (a pitch page); two buttons lead to `/own`, two to `/rent` | First screen = hero + "Get your PropWorth estimate" + "I rent" + "Buying a resale? Check the price" + PropWorth card **only when homes exist**. Remove "What you get", sample update, "How it works", "Why save it?", "Not an owner?" and the `/entry-points` link from the UI (entry points stay in README and `docs/mockups/`). Update P9 (section 18): the empty PropWorth card and benefit line are dropped | First screen fits ~1.5 screens; one link per destination; no `/entry-points` link in the app; tested |
+| D11 | Instruction copy: "Tap a unit to request a viewing", "Takes 20 seconds", "Optional details make the update more useful. You can change them later", "Own more homes? You can add them next" | Remove; affordance comes from the controls (chevrons, buttons). P11 keeps "+ Add another home" on the post-save banner only | Strings absent; tested |
+| D12 | Save sheet: 4 meta paragraphs before the fields; "Save and get my update" below the fold (sheet ~1,000 px in a 747 px viewport) | Sticky save button at the bottom of the sheet; one meta line ("Delivery is simulated in this prototype") kept; consent stays next to the button | Save visible without scrolling at 375x812; tested |
+
+**P2 (not in this pass)**: renter "Above market" and "You pay ~AED 10K more" say the same thing (merge); owner-confirmed units show other sizes to a 1BR renter (filter or label); "DLD rental index calculator" is plain text (make it a link).
+
+- Supersedes: section 18 P9 (empty PropWorth card and benefit line on the first screen) and P10 / P11 copy on the save sheet; section 14 N2 placement of building news inside Update; section 16 stays (the preview card on the valuation remains, above the sticky CTA).
+- Events unchanged; `analysis_opened` when "See the analysis" is tapped on the valuation.
+- Cut order: D1 -> D2 -> D3 -> D10 -> D12 -> D4–D9 -> D11.
+
+Build note (batch A: D1, D2, D3, D10; also D7 and part of D11 to reach the D2 length):
+- D2: the Update tab shows alerts of the owner's own events only (lease, deals, rents, monthly); news-type alerts stay with the news in the News tab. Alert previews quote the message as it would be sent, so they may repeat a number from the blocks above; that is the one allowed repeat. The next step is the first line of the plans card; status, update settings (with the WhatsApp preview under "Change") and remove / delete are one Settings card. Trimmed further on review (overrides D2 detail): Deals shows its one-line summary with every row behind "Show all N" (was top 3); "Your alerts" shows the latest 1 with "See all" (was 2); the plans card drops the "Agents reach you only through PF" line (it stays in the lead sheet with the consent). Measured on the demo home at 375 x 812: see done log (was about 7 screens).
+- D3: Back uses the browser history when the previous page is in this app (in-app page count in sessionStorage), else the fixed parent screen; no router needed. My Home tabs use `replace`.
+
+## 22. v15: product hygiene: offer at the right moment, taken units, support
+Audit of cases a real product would have and the prototype lost. Rule: build what a reviewer meets on the main click path and what closes a brief link; show the rest as a design mockup (`docs/mockups/`) and a line in README.
+
+**Build**
+
+| ID | Change | Acceptance | Priority |
+|---|---|---|---|
+| H1 | **Refinance as a next step for owners with a loan.** Optional fields in the Status sheet: loan balance (exists), current rate, end of the fixed-rate period (shares the D1 field). Rule in `lib/digest.ts`: fixed period ends within 6 months, or current rate is at least 0.5 pp above the example market rate (4.5%, editable, labelled) -> next step "Your fixed rate ends in N months: you could save about AED X a month" (annuity on the balance, remaining term default 20 years). CTA "Compare mortgage offers" -> mortgage lead sheet (reuses V17), mocked. Order in next-step rules: a lease ending or an ended lease (F1, T3) wins; refinance comes next. Also an A2 trigger at 6 and 3 months before the end of the fixed rate | Savings and trigger bounds tested (6 months, +0.5 pp); no line without loan details; `refi_step_shown`, `mortgage_lead_submitted` (source: refi); rate labelled "Example rate" | P0 |
+| H2 | **Taken units.** When the owner of an owner-confirmed unit sets "I let it", "Not now" or "For sale", the renter card turns into "Let agreed · date" (or "No longer for rent"), greyed, with no viewing button, and shows units free around the renter's lease end (V14) instead. A renter who already requested a viewing sees on `/rent`: "This unit is now let. 2 similar units are free around your lease end." Same rule for synthetic listings marked taken in the demo data | Pure function `listingState(unit, ownerStatus)` tested for each status; no viewing request possible on a taken unit; `taken_unit_viewed` | P0 |
+| H3 | **"Something wrong?" (C4) and help.** Link on the valuation, My Home and Rent watch: reasons (wrong size or bedrooms, wrong building, not my unit, numbers look off, other) + free text; stored on the device; confirmation "Thanks, we'll check it". Footer link "Help" to a short static page: how the estimate works (A1), how to delete data (`/privacy`), contact support (mocked email) | Report saved and confirmed; reasons tested; `data_issue_reported` (reason, page); report count feeds "What the data makes possible" in ONE-PAGER (owner corrections improve the estimate) | P1 |
+
+Cut order: H3 -> H1 -> H2. Never cut H2: it is the visible owner -> renter loop.
+
+Build note (batch B: G1, H2, H1):
+- G1 wording changed after checking the source: DLD's own service page (https://dubailand.gov.ae/en/eservices/request-for-golden-visa-investor/) states the **purchase value** must be AED 2M or more (mortgaged: a bank letter that 2M is paid). So "may qualify" is shown only when the price paid is AED 2M or more (portfolio: combined price paid, when every home has one); an estimate of 2M+ alone says "worth AED 2M or more today; DLD's service looks at the purchase value, so check whether today's value counts"; the gap line shows when the estimate is less than 25% below 2M (exactly 25% is not shown). Link to the DLD service above.
+- H2: owner statuses of the owner-confirmed units are demo data (`DEMO_OWNER_STATUS`: one "let agreed", one "no longer for rent"); viewing requests are stored on the device, and the "this unit is now let" notice appears when a requested unit becomes taken (tested; in the click-through the demo statuses do not change, so the notice is not reached by tapping).
+- H1: mortgage details (loan, rate, fixed-rate end) in the Status sheet and the URL; rule order lease > refinance > renewal risk > offers; portfolio urgency: refinance 3, offers 4. Alerts at 6 and 3 months before the fixed rate ends. Demo values: 5.25%, fixed until 30 Apr 2027.
+- Not in this batch: H3 ("Something wrong?" and Help), G2, L1, D1 dates, D11 remaining instruction strings ("Tap a unit to request a viewing").
+
+**Design only (mockups, not built)**
+- **M5 Sold -> search again**: status "Sold" archives the home in PropWorth with the sale price vs the last estimate, and offers the next step: "Looking for your next home?" with a search prefilled from the sale (budget, area). Closes the loop: the search does not end at the purchase, and a sale starts the next search. `docs/mockups/entry-5-sold.png`.
+- **M6 Home services in My Home**: offers tied to the owner's dates and status: mortgage refinance (H1), home insurance at renewal, property management for landlords, Ejari renewal, movers and maintenance at a lease change. Partner offers with revenue share; one at a time, only when relevant. `docs/mockups/entry-6-services.png`.
+- Scout answering with My Home: already T10 (`entry-3-scout.png`); no LLM in the prototype.
+
+**README only (known gaps)**: two people claim the same unit (resolved by title deed verification, X1); real sign-in (C5 stays mocked); Arabic and RTL (X4); real partner offers and revenue share.

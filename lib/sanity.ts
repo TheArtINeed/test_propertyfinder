@@ -83,3 +83,10 @@ export function checkTitleDeed(v: string): string | undefined {
 export function inRange(n: number | null, [lo, hi]: readonly [number, number]): number | null {
   return n != null && n >= lo && n <= hi ? n : null;
 }
+
+/** H1: end of the fixed-rate period: optional; from today to 10 years ahead. */
+export function checkFixedRateEnd(v: string, today = AS_OF): string | undefined {
+  if (v === "") return;
+  if (!isoDate.test(v)) return "Pick a date";
+  if (v < today || v > addYears(today, 10)) return "Pick a date from today to 10 years ahead";
+}

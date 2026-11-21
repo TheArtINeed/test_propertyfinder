@@ -27,6 +27,14 @@ export const EVENT_NAMES = [
   "mortgage_lead_submitted",
   "buyer_lead_submitted",
   "news_opened",
+  "method_viewed",
+  "alert_opened",
+  "portfolio_opened",
+  "home_add_started",
+  "analysis_opened",
+  "golden_visa_viewed",
+  "refi_step_shown",
+  "taken_unit_viewed",
   "portfolio_viewed",
 ] as const;
 

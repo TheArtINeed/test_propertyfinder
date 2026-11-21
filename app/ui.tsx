@@ -2,16 +2,15 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { SOURCES } from "@/lib/types";
 import { Icon } from "./icons";
+import { PortfolioPill } from "./components/portfolio";
+import { BackButton } from "./components/back";
 
 export function TopBar({ back, title }: { back?: string; title?: string }) {
   return (
     <header className="topbar">
-      {back ? (
-        <Link className="iconbtn" href={back} aria-label="Back">
-          <Icon name="back" />
-        </Link>
-      ) : null}
+      {back ? <BackButton href={back} /> : null}
       {title ? <span className="title">{title}</span> : <span className="brand">Property Finder · My Home</span>}
+      {title !== "PropWorth" ? <PortfolioPill /> : null}
       {title ? (
         <Link className="iconbtn" href="/" aria-label="Home">
           <Icon name="home" />

@@ -64,3 +64,36 @@ export function noticeUrgency(daysToNotice: number | null): "urgent" | "passed" 
   if (daysToNotice < 0) return "passed";
   return daysToNotice <= NOTICE_URGENT_DAYS ? "urgent" : null;
 }
+
+/**
+ * H2 (spec v15): taken units. When the owner of an owner-confirmed unit changes plans, the renter's card follows:
+ * let -> "Let agreed · date"; not now / for sale -> "No longer for rent". No viewing request on a taken unit.
+ */
+export type OwnerListingStatus = "rent_out" | "let" | "not_now" | "for_sale";
+export type ListingState = { kind: "available" } | { kind: "let_agreed"; date: string } | { kind: "withdrawn" };
+
+export function listingState(owner: { status: OwnerListingStatus; at?: string } | undefined): ListingState {
+  if (!owner || owner.status === "rent_out") return { kind: "available" };
+  if (owner.status === "let") return { kind: "let_agreed", date: owner.at ?? "" };
+  return { kind: "withdrawn" };
+}
+
+/** Demo data: owners who changed plans after confirming (synthetic listings). */
+export const DEMO_OWNER_STATUS: Record<string, { status: OwnerListingStatus; at: string }> = {
+  "SYN-0020": { status: "let", at: "2026-11-18" },
+  "SYN-0080": { status: "not_now", at: "2026-11-19" },
+};
+
+/** Viewing requests the renter sent, kept on the device. */
+export const VIEWINGS_KEY = "pf.viewings";
+
+/** Requested units that are no longer available. */
+export function takenRequests(requested: string[], states: Record<string, ListingState>): string[] {
+  return requested.filter((id) => states[id] && states[id].kind !== "available");
+}
+
+/** Available units first (matches to the lease end first), taken ones last. */
+export function withStates<T extends { id: string; matched?: boolean }>(units: T[], owners: Record<string, { status: OwnerListingStatus; at?: string }>) {
+  const out = units.map((u) => ({ ...u, state: listingState(owners[u.id]) }));
+  return [...out.filter((u) => u.state.kind === "available"), ...out.filter((u) => u.state.kind !== "available")];
+}
