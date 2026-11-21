@@ -15,14 +15,15 @@ npm test         # Vitest: lib, real-data checks, route smoke tests, events API
 Python data tests: `python3 -m unittest discover -s tests -t .`
 
 ## Click-through
-- `/` is the pitch: what you get, how it works, why save your home, then owner / renter / buyer entries.
-- **Owner:** search "Luma" → 1BR, 80 m² → valuation with "What this means" and a price chart → **Get this every month** → My Home with tabs: Update (October 2026 digest, plans, agent lead), Analysis, News, Owners.
+- `/` is one screen: the promise and one action each for owners ("Get your PropWorth estimate"), renters ("I rent") and buyers ("Buying a resale?"); with saved homes the main button opens your PropWorth and a summary card appears.
+- **Owner:** search "Luma" → 1BR, 80 m² → valuation with "What this means" and a price chart → **Get this every month** (pinned at the bottom) → My Home with tabs: Update (next step and plans first, then the October 2026 numbers, latest alert, settings), Analysis, News (market moves and building news), Owners. **PropWorth** (`/propworth`): all your homes, total value, rent, yield, what needs attention, "Add a home". Back returns to the screen you came from.
 - **Renter** (`/rent`): Rent watch and what to do, allowed increase, owner-confirmed units, rent vs buy → `/buy`.
 - **Buyer** (`/buy`): fair price, negotiation advice, bank valuation gap → **I bought this** → valuation prefilled.
-- `/entry-points`: where My Home would appear on other Property Finder screens, and why each hook is useful.
+- `/entry-points` (not linked from the app, open it by URL): sketches of where My Home would appear on other Property Finder screens; why each hook works is below.
 - **Pilot: one building (Luma Park Views).** Other JVC buildings are shown as "coming soon" and cannot be chosen.
 - **Demo prefill:** every form opens with demo values (`lib/demo.ts`) so you can click straight through; all fields are editable. Consent boxes are pre-ticked only for the demo: a real product never pre-ticks consent.
-- **Return and leads (spec section 14):** owners choose WhatsApp / email / in-app and a frequency when they save their home (changeable on My Home) and see the WhatsApp version of the update; renters get renewal reminders and units that free up when their lease ends, each with a viewing request; buyers get mortgage pre-approval and "ask an agent". On My Home the numbers are one block (with "Market moves" from DLD / Ejari); building and area news is a separate block below.
+- **Return and leads (spec section 14):** owners choose WhatsApp / email / in-app and a frequency when they save their home (changeable on My Home) and see the WhatsApp version of the update; renters get renewal reminders and units that free up when their lease ends, each with a viewing request; buyers get mortgage pre-approval and "ask an agent". Numbers and news never mix: market moves and building news live in the News tab.
+- **Also on My Home:** "How we estimate" (method, what the estimate cannot know, independence line); event alerts as push / WhatsApp / email previews; a Golden Visa line worded to DLD's rule (purchase value of AED 2M+, so "may qualify" only on the price paid); refinance as the next step for owners with a loan. Renters see taken units as "Let agreed".
 - **Sanity checks:** inputs must be plausible for a JVC home (rent AED 10K–2M a year, prices AED 100K–50M, loan ≤ price paid, lease end not in the past, dates within 2–5 years); the message shows under the field. Out-of-range values in shared links are ignored.
 
 ## Where My Home would appear
@@ -77,8 +78,8 @@ Real public data: Dubai Land Department resales and Ejari contracts for JVC, 1 J
 - RERA index proxy: **median** of all JVC contracts of the size band (new + renewed). The mean is unusable: Ejari has outliers from AED 50 to AED 9M a year. The official calculator uses DLD's own index; ours is a proxy.
 
 ## Not built
-- **P1** (no entry point yet): break / move / negotiate calculator (R6), "I think it's worth" (O4), "Something wrong?" report (C4), mock sign-in (C5), one monthly update for all homes (W15). "My homes" (O5) is a list on the first screen only. Notification settings (O7: channel and frequency on My Home) and contact about an owner-confirmed unit (R5: "Request a viewing") are built.
+- **P1** (no entry point yet): break / move / negotiate calculator (R6), "I think it's worth" (O4), "Something wrong?" report and Help page (C4, H3), mock sign-in (C5), one monthly update for all homes (W15), tracking a home outside the pilot with the owner's own value (P5, P6). The portfolio (O5) is built as `/propworth`. Notification settings (O7: channel and frequency on My Home) and contact about an owner-confirmed unit (R5: "Request a viewing") are built.
 - **P2**: real title deed verification, real lead delivery, real email / WhatsApp, Arabic and RTL, move-out and deposit, areas beyond JVC and other markets, real PF demand data, Rent in 12, pay-per-deal matching with DLD / Ejari, history before 2026 (needs a Dubai Pulse key).
 - Optional LLM wording of the digest was skipped; everything is deterministic.
-- **Planned next (spec section 22)**: refinance as the next step for owners with a loan (H1), "Let agreed" for units the owner has let so renters cannot request a taken unit (H2), "Something wrong?" and a Help page (H3).
+- **Not built from spec v13–v15**: "Your building this week" from PF listings (L1), alert when the value crosses AED 2M (G2), "your dates this month" (D1 dates), and the remaining design-review items D4, D6, D8, D9, D11, D12 (link colour of advice lines, chevrons on cards, "No increase allowed" wording, top-bar rules, last instruction strings such as "Tap a unit to request a viewing", pinned save button in the sheet). In the click-through the demo owner statuses do not change, so the "a unit you asked to view is now let" notice is covered by tests only.
 - **Known gaps**: two people claiming the same unit (resolved by title deed verification, not built); real sign-in; Scout answering with My Home is a mockup only, no LLM in the prototype; real partner offers and revenue share.
