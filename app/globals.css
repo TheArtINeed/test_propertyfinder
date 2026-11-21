@@ -258,3 +258,11 @@ input[aria-invalid="true"] { border-color: var(--error); }
 .list li.deal .price .meta { font-weight: 400; }
 .list.kv li > span { color: var(--text-2); flex: 0 0 auto; }
 .list.kv li > b { text-align: right; }
+
+/* V18 update preview */
+.preview { border: 1px solid var(--coral); }
+.preview-list { list-style: none; margin: 8px 0 0; padding: 0; }
+.preview-list li { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.preview-list li:last-child { border-bottom: 0; }
+.preview-list li > span:last-child { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; }
+.preview-list b { font-size: 14px; line-height: 20px; font-weight: 600; }

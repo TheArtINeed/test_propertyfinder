@@ -7,6 +7,8 @@ import { estimateValue, findBuilding, outlook, pricePerSqm, type CompLevel } fro
 import { parseUnitQuery } from "@/lib/owner";
 import { aed, bulkLabel, dateLabel, pct, roomsLabel, roundEstimate, sqm } from "@/lib/format";
 import { DealList, GetMonthly, Track } from "../../../components/client";
+import { updatePreview, IMPACT_WORD } from "@/lib/news";
+import { Icon } from "../../../icons";
 import { BuildingNotFound, ComingSoon, Empty, FooterNote, MissingUnit, Source, TopBar } from "../../../ui";
 
 type Props = { params: Promise<{ building: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
@@ -127,6 +129,8 @@ export default async function Valuation({ params, searchParams }: Props) {
         <Source kind="estimate">, not advice</Source>
       </div>
 
+      <UpdatePreview preview={updatePreview(resales, rents, b.name, q.rooms)} />
+
       <GetMonthly
         ctx={{ slug, building: b.name, unitNumber: q.unit, rooms: q.rooms, sizeSqm: q.sizeSqm }}
         prefillPaid={q.pricePaid}
@@ -152,4 +156,45 @@ function priceSeries(resales: Parameters<typeof monthlyPerSqm>[0], building: str
       },
     ],
   };
+}
+
+const IMPACT_ICON = { up: "▲", down: "▼", neutral: "•" } as const;
+
+/** V18: what the monthly update adds, shown right above "Get this every month". */
+function UpdatePreview({ preview }: { preview: ReturnType<typeof updatePreview> }) {
+  const { move, news } = preview;
+  return (
+    <div className="card preview" aria-label="Every month you'll also get">
+      <h3>Every month you&apos;ll also get</h3>
+      <ul className="preview-list">
+        {move ? (
+          <li>
+            <span className="bicon"><Icon name="chart" /></span>
+            <span>
+              <b>{move.title}</b>
+              <span className="meta">Deals and new leases in your building</span>
+              <span className="src">{move.source}</span>
+            </span>
+          </li>
+        ) : null}
+        <li>
+          <span className="bicon"><Icon name="news" /></span>
+          <span>
+            <b>{news.title}</b>
+            <span className={`impact ${news.impact}`}>
+              <span aria-hidden>{IMPACT_ICON[news.impact]}</span> {IMPACT_WORD[news.impact]}: {news.impactText}
+            </span>
+            <span className="src illustrative">{news.source}</span>
+          </span>
+        </li>
+        <li>
+          <span className="bicon"><Icon name="bell" /></span>
+          <span>
+            <b>A reminder 90 days before your lease ends</b>
+            <span className="meta">With the rent new tenants pay and the legal renewal increase</span>
+          </span>
+        </li>
+      </ul>
+    </div>
+  );
 }

@@ -74,3 +74,7 @@ Description of every feature developed in this project. Add an entry for each ne
 - W1 "I rent" in the first-screen hero; W2 "why it works" moved from `/entry-points` to README; W5 outlook on May–Jul vs Aug–Oct (same as momentum and market readings); W6 value change over 3 months; W7 same-day bulk deals collapsed (`collapseBulkDeals`); W8 renters can pick any JVC building, owner-confirmed units only in the pilot; W9 demo lease end 28 Feb 2027 (see spec note); W10 one money formatter in advice; W11 demo asking AED 1.5M; W12 rounded sizes and bulk labels.
 - Design review: thin line SVG icons (`app/icons.tsx`) instead of Unicode symbols; deal rows with price on the right and AED/m² below; news items with impact on its own line and lighter titles; shorter sample-update labels; one primary button on `/buy`; price per m² on its own line on the valuation.
 - Tests: `tests/app/v8.test.tsx`; spec-driven updates in `market.test.ts`, `insights_news.test.ts`, `demo_prefill.test.tsx`, `smoke.test.tsx`.
+
+## Monthly-update preview on the valuation (`docs/SPEC.md` section 16, V18)
+- "Every month you'll also get" card right above "Get this every month": the real top deal of the month (same function as My Home's market moves), one building and area news item with its price impact (labelled illustrative), and the 90-day lease reminder. No full news block on the valuation.
+- Files: `lib/news.ts` (`updatePreview`), `app/own/[building]/value/page.tsx`. Tests: `tests/app/v8.test.tsx` (V18).

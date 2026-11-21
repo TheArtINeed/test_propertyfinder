@@ -119,3 +119,34 @@ describe("W10-W12: formatting", () => {
     expect(readFileSync("ONE-PAGER.md", "utf8")).toMatch(/AED 1\.5M/);
   });
 });
+
+import Valuation from "@/app/own/[building]/value/page";
+import { marketMoves, updatePreview } from "@/lib/news";
+
+describe("V18: monthly-update preview on the valuation", () => {
+  const page = () => html(Valuation({ params: Promise.resolve({ building: "luma-park-views" }), searchParams: Promise.resolve({ unit: "1204", rooms: "1", size: "80" }) }));
+  it("sits right above 'Get this every month' with 3 lines and their labels", async () => {
+    const h = await page();
+    const card = h.indexOf("Every month you&#x27;ll also get");
+    const cta = h.indexOf("Get this every month");
+    expect(card).toBeGreaterThan(0);
+    expect(card).toBeLessThan(cta);
+    const block = h.slice(card, cta);
+    expect(block).toContain("DLD / Ejari open data");
+    expect(block).toContain("Illustrative example, not a real event");
+    expect(block).toContain("A reminder 90 days before your lease ends");
+    expect(block).toMatch(/(Up|Down): /);
+  });
+  it("line 1 is the real top deal from the same function as My Home", () => {
+    const p = updatePreview(snap.resales, snap.rents, HERO_BUILDING, 1);
+    const same = marketMoves(snap.resales, snap.rents, HERO_BUILDING, 1).find((n) => n.id === p.move!.id)!;
+    expect(p.move!.kind).toBe("data");
+    expect(p.move!.title).toBe(same.title);
+    expect(p.news.kind).toBe("illustrative");
+  });
+  it("no full news block on the valuation", async () => {
+    const h = await page();
+    expect(h).not.toContain("Building and area news");
+    expect(h).not.toContain('data-block="news"');
+  });
+});

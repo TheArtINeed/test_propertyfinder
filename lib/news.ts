@@ -201,3 +201,14 @@ export function areaNews(): NewsItem[] {
   return [...ILLUSTRATIVE_NEWS].sort((a, c) => c.date.localeCompare(a.date));
 }
 export const IMPACT_WORD: Record<Impact, string> = { up: "Up", down: "Down", neutral: "Neutral" };
+
+/**
+ * V18: three lines for the "Every month you'll also get" card on the valuation:
+ * one real market move (top deal of the month, same function as My Home), one area news item, the reminder.
+ */
+export function updatePreview(resales: SaleRow[], rents: RentRow[], building: string, rooms: number, month = DIGEST_MONTH) {
+  const moves = marketMoves(resales, rents, building, rooms, month);
+  const move = moves.find((n) => n.id.startsWith("deal-top")) ?? moves[0] ?? null;
+  const news = areaNews().find((n) => n.impact !== "neutral") ?? areaNews()[0];
+  return { move, news };
+}

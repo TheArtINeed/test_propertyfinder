@@ -1,6 +1,6 @@
 # Dev spec: PropWorth "My Home" prototype
 
-Status: draft v8, 2026-11-21 (v4 review changes: section 11; v5 demo prefill: section 12; v6 sanity checks: section 13; v7 return and lead loop, separate news: section 14; v8 review fixes: section 15). Scope = what we build in the timed task (~3 h). Business framing will live in `ONE-PAGER.md` (to be written). Support cases are detailed in `prep/support_cases_spec.md`; section 9 here is the single list of all cases with v2 priorities.
+Status: draft v9, 2026-11-21 (v4 review changes: section 11; v5 demo prefill: section 12; v6 sanity checks: section 13; v7 return and lead loop, separate news: section 14; v8 review fixes: section 15; v9 update preview on the valuation: section 16). Scope = what we build in the timed task (~3 h). Business framing will live in `ONE-PAGER.md` (to be written). Support cases are detailed in `prep/support_cases_spec.md`; section 9 here is the single list of all cases with v2 priorities.
 
 ## 1. Idea in one line
 A resale buyer's search does not end at the key handover: after the PropWorth valuation, the unit becomes **"My Home"**, and every month the owner gets a **digest** tied to money that moves anyway (rent in, mortgage out): rents and deals in the building, demand for a unit like theirs, and one next step. The owner sets an **intent** ("rent out from / open to offers from X / not now"), which becomes a qualified lead for agents and an **"owner-confirmed"** signal for renters.
@@ -266,3 +266,10 @@ Review after v7. Build after v7 is done; do not mix with the v7 work in progress
 Cut order: W1, W2 (brief) -> W7, W5, W6 (numbers) -> W8, W9 -> W10-W12.
 
 Build note (W9): the demo lease end is **28 Feb 2027**, not 31 Mar 2027. With 31 Mar no owner-confirmed unit falls in the +-30-day window (the latest frees up on 30 Jan 2027), so V14 "Free when your lease ends" would disappear from the demo. 28 Feb keeps the goal of W9 (90-day notice date 30 Nov 2026 is in the future) and one match (1BR, free from 30 Jan).
+
+## 16. v9: monthly-update preview on the valuation
+News and the monthly update live on My Home (N1), so on the valuation the user does not see them before deciding to subscribe. The valuation stays the PropWorth step "as today" (no full news block); one compact preview sits right above "Get this every month".
+
+| ID | Change | Acceptance | Priority |
+|---|---|---|---|
+| V18 | **"Every month you'll also get" card** above the CTA, 3 lines: (1) one market move from DLD / Ejari (the top deal of the digest month in the building, real), (2) one building and area news headline with its impact on price (icon + word), labelled "Illustrative", (3) the renewal reminder ("a reminder 90 days before your lease ends"). Each line keeps its source label | Card renders above the CTA; line 1 is real data from the same function as My Home's market moves; line 2 carries the Illustrative label; no full news block on the valuation; tested | P0 |
