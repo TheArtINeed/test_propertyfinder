@@ -22,6 +22,6 @@ Description of every feature developed in this project. Add an entry for each ne
 
 ## App skeleton and API health check
 - Next.js app (App Router, TypeScript) for Vercel; landing page in Property Finder styles.
-- `GET /api/health` reports which LLM keys are set (never their values). `?live=1` checks the key with the provider (Anthropic or OpenAI) via a model-list call that uses no tokens.
+- `GET /api/health` reports whether the OpenAI key is set (never its value). `?live=1` checks the OpenAI key via a model-list call that uses no tokens.
 - Files: `app/`, `lib/health.ts`, `app/api/health/route.ts`.
 - Tests: `tests/app/health.test.ts` (Vitest, `npm test`).
