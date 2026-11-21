@@ -78,3 +78,13 @@ Description of every feature developed in this project. Add an entry for each ne
 ## Monthly-update preview on the valuation (`docs/SPEC.md` section 16, V18)
 - "Every month you'll also get" card right above "Get this every month": the real top deal of the month (same function as My Home's market moves), one building and area news item with its price impact (labelled illustrative), and the 90-day lease reminder. No full news block on the valuation.
 - Files: `lib/news.ts` (`updatePreview`), `app/own/[building]/value/page.tsx`. Tests: `tests/app/v8.test.tsx` (V18).
+
+## PropWorth naming and portfolio summary (`docs/SPEC.md` W13-W14)
+- W13: PropWorth is named in the UI: first-screen CTA "Get your PropWorth estimate", valuation "PropWorth estimate today", every value labelled "PropWorth estimate", subscribe sheet "Get your PropWorth every month in My Home". Each saved unit is listed as "My Home".
+- W14: PropWorth summary on the first screen above the saved homes: total value range, rent in per year and weighted gross yield (let homes only), and one "Needs attention" link to the most urgent home (ended lease > lease ending soon (nearest first) > renewal risk > open to offers). Homes stay on the device; the client sends them to `POST /api/portfolio`, which computes the summary from the DLD snapshot and stores nothing. Event `portfolio_viewed`.
+- Files: `lib/portfolio.ts`, `app/api/portfolio/route.ts`, `app/components/client.tsx` (`MyHomes`).
+- Tests: `tests/app/portfolio.test.tsx` (one home equals its digest, sums for two homes, rent and yield only for let homes, urgency order and ties, unknown building skipped, body validation, API, labels; no "PF estimate" left in sources).
+
+## Product features overview (doc)
+- Short list of the main product features for owners, renters and buyers, each with a one-line reason why it exists. Mirrored as the Drive doc "PF Challenge - Product Features".
+- Files: `PRODUCT-FEATURES.md`. Docs only, no code.

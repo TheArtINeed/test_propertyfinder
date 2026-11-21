@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { EventName } from "@/lib/events";
 import { searchBuildings, type Building } from "@/lib/market";
-import { roomsLabel } from "@/lib/format";
+import { aed, pct, roomsLabel, roundEstimate } from "@/lib/format";
+import type { Portfolio } from "@/lib/portfolio";
 import { CHANNEL_LABEL, FREQUENCY_LABEL, getHomes, homeId, nextUpdateDate, saveHome, type Channel, type Frequency, type Home } from "@/lib/owner";
 import { dateLabel } from "@/lib/format";
 import { AS_OF, SQFT_PER_SQM } from "@/lib/types";
@@ -46,23 +47,66 @@ export function SessionStart() {
 
 export function MyHomes() {
   const [homes, setHomes] = useState<Home[]>([]);
+  const [summary, setSummary] = useState<Portfolio | null>(null);
   useEffect(() => {
+    let list: Home[] = [];
     try {
-      setHomes(getHomes(localStorage));
+      list = getHomes(localStorage);
     } catch {
-      setHomes([]);
+      list = [];
     }
+    setHomes(list);
+    if (!list.length) return;
+    fetch("/api/portfolio", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ homes: list }),
+    })
+      .then((r) => r.json())
+      .then((j: { ok: boolean; portfolio?: Portfolio }) => {
+        if (!j.ok || !j.portfolio) return;
+        setSummary(j.portfolio);
+        track("portfolio_viewed", { homes: j.portfolio.count, attention: j.portfolio.attention?.nextStep.kind ?? null });
+      })
+      .catch(() => setSummary(null));
   }, []);
   if (!homes.length) return null;
+  const attentionHome = summary?.attention ? homes.find((h) => h.id === summary.attention!.id) : undefined;
   return (
-    <div className="card">
-      <h3>My homes</h3>
+    <div className="card" id="propworth">
+      <h2>PropWorth</h2>
+      {summary && summary.count ? (
+        <div className="stack" data-testid="portfolio-summary">
+          <p className="meta">
+            Your PropWorth · {summary.count} {summary.count === 1 ? "home" : "homes"}
+          </p>
+          <div className="mid">
+            {aed(roundEstimate(summary.low), { compact: true })} – {aed(roundEstimate(summary.high), { compact: true })}
+          </div>
+          {summary.rentIn != null && summary.yield != null ? (
+            <p className="meta">
+              Rent in: {aed(summary.rentIn, { compact: true })} / year · gross yield {pct(summary.yield, 1)}
+            </p>
+          ) : null}
+          {summary.attention && attentionHome ? (
+            <Link className="item" href={homeUrl(attentionHome)}>
+              <span>
+                <b>Needs attention:</b> {summary.attention.unitNumber} · {summary.attention.nextStep.title}
+              </span>
+              <span aria-hidden>›</span>
+            </Link>
+          ) : (
+            <p className="meta">Nothing urgent this month.</p>
+          )}
+          <p className="hint">PropWorth estimate · DLD registered resales, 2026</p>
+        </div>
+      ) : null}
       <ul className="list">
         {homes.map((h) => (
           <li key={h.id}>
             <Link className="item" href={homeUrl(h)}>
               <span>
-                {h.building} · {h.unitNumber}
+                My Home · {h.building} · {h.unitNumber}
                 <span className="meta"> · {roomsLabel(h.rooms)}, {h.sizeSqm} m²</span>
               </span>
               <span aria-hidden>›</span>
@@ -343,6 +387,7 @@ export function GetMonthly({ ctx, prefillPaid }: { ctx: UnitCtx; prefillPaid?: n
                 ✕
               </button>
             </div>
+            <p className="meta">Get your PropWorth every month in My Home.</p>
             <label>Send my update by</label>
             <div className="chips" role="group" aria-label="Channel">
               {(Object.keys(CHANNEL_LABEL) as Channel[]).map((c) => (

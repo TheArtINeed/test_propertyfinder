@@ -89,7 +89,7 @@ describe("smoke: every route renders for the hero building and has a next action
 
   it("/own/[building]/value shows estimate, range, deals and the monthly CTA", async () => {
     const h = await html(Valuation(props(hero, unit)));
-    expect(h).toMatch(/Estimated value today/);
+    expect(h).toMatch(/PropWorth estimate today/); // W13: renamed on purpose
     expect(h).toMatch(/Range AED/);
     expect(h).toMatch(/Based on \d+ deals/);
     expect(h).toContain("Get this every month");

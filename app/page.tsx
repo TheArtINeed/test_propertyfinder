@@ -27,7 +27,7 @@ export default function Home() {
         </p>
         <div className="stack">
           <Link className="btn" href="/own">
-            Check my home&apos;s value, free
+            Get your PropWorth estimate, free
           </Link>
           <Link className="btn secondary" href="/rent">
             I rent: is my rent fair?

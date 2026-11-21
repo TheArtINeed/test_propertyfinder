@@ -230,7 +230,7 @@ Review after v6: the owner side has content worth coming back for and a working 
 - Cut order if short of time: F1 -> V11, V12 -> N1, N2 -> V14, V15 -> V13 -> V16 -> V17, F3. Never cut V11 (return), V15 (renter -> owner link) and N1 (readable numbers).
 
 
-## 15. v8: review fixes (first screen, consistent numbers, renter reach)
+## 15. v8: review fixes (first screen, consistent numbers, renter reach, PropWorth naming)
 Review after v7. Build after v7 is done; do not mix with the v7 work in progress. Items 5 and 6 change calculation logic, so their tests are updated on purpose (say so in the commit).
 
 **Brief compliance**
@@ -263,7 +263,17 @@ Review after v7. Build after v7 is done; do not mix with the v7 work in progress
 | W11 | Demo asking price AED 1,500,000 to match the ONE-PAGER buyer example (`lib/demo.ts`) | App and ONE-PAGER show the same buyer numbers | P1 |
 | W12 | Sizes in deal lists rounded: "78 m²", not "77.89 m²" | Tested in the formatter | P1 |
 
-Cut order: W1, W2 (brief) -> W7, W5, W6 (numbers) -> W8, W9 -> W10-W12.
+**Naming and portfolio: PropWorth stays visible**
+Added after the W1-W12 build. W13 and W14 are built (`lib/portfolio.ts`, `POST /api/portfolio`); W15 is not built yet.
+PropWorth is the brand of the owner area and of the number; each unit inside it is a "My Home". The brief asks for a clear link to PropWorth, and today the word does not appear in the UI. An investor-landlord, our primary owner, often holds several units, so the owner area should sum them up.
+
+| ID | Change | Acceptance | Priority |
+|---|---|---|---|
+| W13 | **Names**: owner area = "PropWorth", each unit = "My Home"; every value number labelled "PropWorth estimate" (not "PF estimate"); first-screen CTA "Get your PropWorth estimate"; subscribe sheet "Get your PropWorth every month" | "PropWorth" shows on the valuation, the owner area and every value label; no "PF estimate" left; tested | P0 |
+| W14 | **PropWorth summary** above the homes list: total value range, rent in per year, average gross yield, one "Needs attention" line (the most urgent next step across homes, same rules as the digest) | Correct sums for 1 and 2 homes on fixtures; with one home it shows that home; `portfolio_viewed` | P0 |
+| W15 | **One monthly digest for all homes**: the summary first, then one line per home with its next step (WhatsApp preview too) | Numbers match each home's digest; tested | P1 |
+
+Cut order: W1, W2 (brief) -> W13 (PropWorth link) -> W7, W5, W6 (numbers) -> W8, W9 -> W14 -> W10-W12, W15.
 
 Build note (W9): the demo lease end is **28 Feb 2027**, not 31 Mar 2027. With 31 Mar no owner-confirmed unit falls in the +-30-day window (the latest frees up on 30 Jan 2027), so V14 "Free when your lease ends" would disappear from the demo. 28 Feb keeps the goal of W9 (90-day notice date 30 Nov 2026 is in the future) and one match (1BR, free from 30 Jan).
 

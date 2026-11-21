@@ -43,7 +43,7 @@ export const DLD_FEE = 0.04;
 export const SOURCES = {
   dld: "DLD registered resales, 2026",
   ejari: "Ejari contracts, 2026",
-  estimate: "PF estimate",
+  estimate: "PropWorth estimate",
   illustrative: "Illustrative: based on PF searches in production",
   owner: "Owner's value",
   rera: "RERA index proxy (Ejari, all contracts)",

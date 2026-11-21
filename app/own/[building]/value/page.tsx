@@ -65,7 +65,7 @@ export default async function Valuation({ params, searchParams }: Props) {
       ) : null}
 
       <div className="card">
-        <p className="meta">Estimated value today</p>
+        <p className="meta">PropWorth estimate today</p>
         <div className="big">{aed(roundEstimate(est.mid))}</div>
         <p className="range">
           Range {aed(roundEstimate(est.low))} – {aed(roundEstimate(est.high))}

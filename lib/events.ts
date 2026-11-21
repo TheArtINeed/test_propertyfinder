@@ -27,6 +27,7 @@ export const EVENT_NAMES = [
   "mortgage_lead_submitted",
   "buyer_lead_submitted",
   "news_opened",
+  "portfolio_viewed",
 ] as const;
 
 export type EventName = (typeof EVENT_NAMES)[number];

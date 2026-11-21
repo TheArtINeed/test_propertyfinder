@@ -135,7 +135,7 @@ export function HomePanel({ id, fallback, estimate, marketRent }: Props) {
             <label htmlFor="i-price">Offers from, AED</label>
             <input id="i-price" inputMode="numeric" value={price} aria-invalid={!!intentErrors.price} onChange={(e) => { setPrice(e.target.value); setIntentErrors((x) => ({ ...x, price: undefined })); }} />
             <FieldError msg={intentErrors.price} />
-            <p className="hint">PF estimate {aed(roundEstimate(estimate.low), { compact: true })} – {aed(roundEstimate(estimate.high), { compact: true })}</p>
+            <p className="hint">PropWorth estimate {aed(roundEstimate(estimate.low), { compact: true })} – {aed(roundEstimate(estimate.high), { compact: true })}</p>
           </>
         ) : null}
         <div style={{ marginTop: 12 }}>
@@ -425,7 +425,7 @@ function LeadSheet({
               </div>
             </div>
             {intent === "sell" ? (
-              <p className="hint">PF estimate {aed(roundEstimate(estimate.low))} – {aed(roundEstimate(estimate.high))}</p>
+              <p className="hint">PropWorth estimate {aed(roundEstimate(estimate.low))} – {aed(roundEstimate(estimate.high))}</p>
             ) : null}
             <label>How should the agent contact you?</label>
             <div className="chips">
@@ -453,7 +453,7 @@ function LeadSheet({
               <ul className="list meta">
                 <li><span>Unit</span><span>{home.building} · {home.unitNumber}</span></li>
                 <li><span>Size, bedrooms</span><span>{home.sizeSqm} m², {home.rooms === 0 ? "studio" : `${home.rooms}BR`}</span></li>
-                <li><span>PF estimate</span><span>{aed(roundEstimate(estimate.mid), { compact: true })} ({aed(roundEstimate(estimate.low), { compact: true })} – {aed(roundEstimate(estimate.high), { compact: true })})</span></li>
+                <li><span>PropWorth estimate</span><span>{aed(roundEstimate(estimate.mid), { compact: true })} ({aed(roundEstimate(estimate.low), { compact: true })} – {aed(roundEstimate(estimate.high), { compact: true })})</span></li>
                 <li><span>Ownership</span><span>{home.verification === "pending" ? "Verification pending" : "Not verified"}</span></li>
               </ul>
               <p className="tiny">Not shared: your name and number until you accept the agent.</p>
