@@ -1,2 +1,8 @@
 CLAUDE.local.md
 .DS_Store
+.env*
+.vercel
+node_modules/
+.next/
+next-env.d.ts
+*.tsbuildinfo

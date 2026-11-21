@@ -19,3 +19,9 @@ Description of every feature developed in this project. Add an entry for each ne
 - Open data catalogue: DLD / Dubai Pulse, RTA, KHDA, DSC, other PF markets, PF's own public reports, listing datasets, with access and license notes.
 - Files: `prep/fact_sheet.md`, `prep/measurement_template.md`, `prep/gtm_template.md`, `prep/open_data.md`.
 - Docs only, no code. The sample-size table uses the standard two-proportion formula (alpha 0.05, power 0.8).
+
+## App skeleton and API health check
+- Next.js app (App Router, TypeScript) for Vercel; landing page in Property Finder styles.
+- `GET /api/health` reports which LLM keys are set (never their values). `?live=1` checks the key with the provider (Anthropic or OpenAI) via a model-list call that uses no tokens.
+- Files: `app/`, `lib/health.ts`, `app/api/health/route.ts`.
+- Tests: `tests/app/health.test.ts` (Vitest, `npm test`).

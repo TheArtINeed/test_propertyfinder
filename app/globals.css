@@ -1,0 +1,23 @@
+:root {
+  --primary: #ea3934;
+  --primary-hover: #97211e;
+  --secondary: #3a307f;
+  --text: #333333;
+  --text-meta: #707070;
+  --bg: #ffffff;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 400 14px/24px "Open Sans", system-ui, sans-serif;
+}
+.shell { max-width: 720px; margin: 0 auto; padding: 48px 16px; }
+h1 { font-size: 32px; line-height: 48px; font-weight: 700; margin: 0 0 8px; }
+.meta { color: var(--text-meta); font-size: 12px; line-height: 20px; margin: 0 0 24px; }
+.btn {
+  display: inline-block; padding: 8px 24px; border-radius: 8px;
+  background: var(--primary); color: #fff; font-weight: 600; text-decoration: none;
+}
+.btn:hover { background: var(--primary-hover); }
