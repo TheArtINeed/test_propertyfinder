@@ -7,6 +7,7 @@ import { renewalCheck, rentWatch, reraIndexProxy } from "@/lib/rent";
 import { EXAMPLE_RATE, rentVsBuy } from "@/lib/finance";
 import { aed, dateLabel, pct, roomsLabel, roundEstimate } from "@/lib/format";
 import { AS_OF, DIGEST_MONTH } from "@/lib/types";
+import { DEMO, prefill } from "@/lib/demo";
 import { Track } from "../components/client";
 import { BuildingSelect, FieldError, FooterNote, RoomsSelect, Source, TopBar } from "../ui";
 import { AdviceCard } from "../components/insights";
@@ -20,7 +21,9 @@ export default async function Rent({ searchParams }: Props) {
   const q = parseRentQuery(await searchParams);
   const { buildings, resales, rents } = loadSnapshot();
   const b = activeOrDefault(buildings, q.building);
-  const ok = q.submitted && !hasErrors(q.errors) && q.sizeSqm && q.annualRent;
+  // A bad mortgage rate must not hide the rent check: it falls back to the example rate (message by the rate field).
+  const { rate: rateError, ...blocking } = q.errors;
+  const ok = q.submitted && !hasErrors(blocking) && q.sizeSqm && q.annualRent;
 
   const watch = ok ? rentWatch(rents, { building: b.name, sizeSqm: q.sizeSqm!, annualRent: q.annualRent! }, DIGEST_MONTH) : null;
   const index = ok ? reraIndexProxy(rents, q.sizeSqm!) : null;
@@ -37,7 +40,8 @@ export default async function Rent({ searchParams }: Props) {
       <h1>Is my rent fair?</h1>
       <p className="lead">Compare with new Ejari leases in JVC, Aug – Oct 2026. No account needed.</p>
 
-      <form className="card" method="get" action="/rent">
+      <form className="card" method="get" action="/rent#results">
+        <input type="hidden" name="go" value="1" />
         <BuildingSelect buildings={buildings} value={b.slug} />
         <div className="grid2">
           <div>
@@ -45,27 +49,31 @@ export default async function Rent({ searchParams }: Props) {
           </div>
           <div>
             <label htmlFor="size">Size, m²</label>
-            <input id="size" name="size" inputMode="decimal" defaultValue={q.sizeSqm ?? ""} placeholder="80" aria-invalid={!!q.errors.size} />
+            <input id="size" name="size" inputMode="decimal" defaultValue={prefill(q.submitted, q.raw.size, DEMO.sizeSqm)} placeholder="e.g. 80" aria-invalid={!!q.errors.size} />
             <FieldError msg={q.errors.size} />
           </div>
         </div>
         <div className="grid2">
           <div>
             <label htmlFor="rent">Annual rent, AED</label>
-            <input id="rent" name="rent" inputMode="numeric" defaultValue={q.annualRent ?? ""} placeholder="85000" aria-invalid={!!q.errors.rent} />
+            <input id="rent" name="rent" inputMode="numeric" defaultValue={prefill(q.submitted, q.raw.rent, DEMO.renter.annualRent)} placeholder="e.g. 85000" aria-invalid={!!q.errors.rent} />
             <FieldError msg={q.errors.rent} />
           </div>
           <div>
             <label htmlFor="end">Lease ends</label>
-            <input id="end" name="end" type="date" defaultValue={q.leaseEnd ?? ""} />
+            <input id="end" name="end" type="date" defaultValue={prefill(q.submitted, q.raw.end, DEMO.renter.leaseEnd)} aria-invalid={!!q.errors.end} />
+            <FieldError msg={q.errors.end} />
           </div>
         </div>
         <label htmlFor="ask">Landlord asks for an increase, % (optional)</label>
-        <input id="ask" name="ask" inputMode="decimal" defaultValue={q.askedIncrease != null ? q.askedIncrease * 100 : ""} placeholder="e.g. 10" />
+        <input id="ask" name="ask" aria-invalid={!!q.errors.ask} inputMode="decimal" defaultValue={prefill(q.submitted, q.raw.ask, DEMO.renter.askedIncreasePct)} placeholder="e.g. 10" />
+        <FieldError msg={q.errors.ask} />
         <div style={{ marginTop: 16 }}>
           <button className="btn" type="submit">Check my rent</button>
         </div>
       </form>
+
+      <div id="results" />
 
       {ok && !watch ? (
         <div className="card warn">
@@ -170,9 +178,10 @@ export default async function Rent({ searchParams }: Props) {
               const v = { b: q.building, rooms: q.rooms, size: q.sizeSqm, rent: q.annualRent, end: q.leaseEnd, ask: q.askedIncrease != null ? q.askedIncrease * 100 : null }[k];
               return v != null && v !== "" ? <input key={k} type="hidden" name={k} value={String(v)} /> : null;
             })}
-            <input name="rate" aria-label="Mortgage rate, %" inputMode="decimal" defaultValue={(rate * 100).toFixed(2)} style={{ width: 96 }} />
+            <input name="rate" aria-label="Mortgage rate, %" inputMode="decimal" aria-invalid={!!rateError} defaultValue={(rate * 100).toFixed(2)} style={{ width: 96 }} />
             <button className="btn secondary inline" type="submit">Update rate, %</button>
           </form>
+          <FieldError msg={rateError ? `${rateError}. Using the example rate.` : undefined} />
           <p className="hint">Excludes service charges, agency and bank fees.</p>
           {q.rate ? <Source kind="estimate" /> : <Source kind="example" />} <Source kind="dld" />
           <div style={{ marginTop: 12 }}>

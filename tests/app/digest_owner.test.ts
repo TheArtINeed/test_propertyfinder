@@ -106,7 +106,8 @@ describe("owner storage (O1, O2, O3, O9)", () => {
 
   it("lead cannot be sent without intent and contact; payload matches the schema", () => {
     expect(validateLead({})).toHaveLength(5);
-    expect(validateLead({ intent: "sell", askingPrice: 1, availableFrom: "2026-12-01", consent: true })).toEqual([
+    // Updated for sanity checks (spec 13): a plausible sale price, so only the contact error is left.
+    expect(validateLead({ intent: "sell", askingPrice: 1_300_000, availableFrom: "2026-12-01", consent: true })).toEqual([
       "Choose how the agent contacts you",
     ]);
     const lead = buildLead(home, { intent: "rent_out", askingPrice: 95_000, availableFrom: "2027-01-01", contact: "whatsapp", consent: true },

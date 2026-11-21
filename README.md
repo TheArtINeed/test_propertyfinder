@@ -19,6 +19,8 @@ Python data tests: `python3 -m unittest discover -s tests -t .`
 - **Buyer** (`/buy`): fair price, negotiation advice, bank valuation gap → **I bought this** → valuation prefilled.
 - `/entry-points`: where My Home would appear on other Property Finder screens, and why each hook is useful.
 - **Pilot: one building (Luma Park Views).** Other JVC buildings are shown as "coming soon" and cannot be chosen.
+- **Demo prefill:** every form opens with demo values (`lib/demo.ts`) so you can click straight through; all fields are editable. Consent boxes are pre-ticked only for the demo: a real product never pre-ticks consent.
+- **Sanity checks:** inputs must be plausible for a JVC home (rent AED 10K–2M a year, prices AED 100K–50M, loan ≤ price paid, lease end not in the past, dates within 2–5 years); the message shows under the field. Out-of-range values in shared links are ignored.
 
 ## Data
 Real public data: Dubai Land Department resales and Ejari contracts for JVC, 1 Jan – 20 Nov 2026 (`dataset/`).

@@ -5,6 +5,7 @@ import { buyAdvice } from "@/lib/insights";
 import { bankGap } from "@/lib/finance";
 import { boughtThisQuery } from "@/lib/owner";
 import { aed, pct, roomsLabel, roundEstimate } from "@/lib/format";
+import { DEMO, prefill } from "@/lib/demo";
 import { TrackLink } from "../components/client";
 import { BuildingSelect, FieldError, FooterNote, RoomsSelect, Source, TopBar } from "../ui";
 import { AdviceCard } from "../components/insights";
@@ -27,7 +28,8 @@ export default async function Buy({ searchParams }: Props) {
       <h1>Is the price fair?</h1>
       <p className="lead">Before you make an offer: compare with registered resales and see what the bank may lend.</p>
 
-      <form className="card" method="get" action="/buy">
+      <form className="card" method="get" action="/buy#results">
+        <input type="hidden" name="go" value="1" />
         <BuildingSelect buildings={buildings} value={b.slug} />
         <div className="grid2">
           <div>
@@ -35,17 +37,19 @@ export default async function Buy({ searchParams }: Props) {
           </div>
           <div>
             <label htmlFor="size">Size, m²</label>
-            <input id="size" name="size" inputMode="decimal" defaultValue={q.sizeSqm ?? ""} placeholder="80" aria-invalid={!!q.errors.size} />
+            <input id="size" name="size" inputMode="decimal" defaultValue={prefill(q.submitted, q.raw.size, DEMO.sizeSqm)} placeholder="e.g. 80" aria-invalid={!!q.errors.size} />
             <FieldError msg={q.errors.size} />
           </div>
         </div>
         <label htmlFor="price">Asking price, AED</label>
-        <input id="price" name="price" inputMode="numeric" defaultValue={q.asking ?? ""} placeholder="1250000" aria-invalid={!!q.errors.price} />
+        <input id="price" name="price" inputMode="numeric" defaultValue={prefill(q.submitted, q.raw.price, DEMO.buyer.asking)} placeholder="e.g. 1250000" aria-invalid={!!q.errors.price} />
         <FieldError msg={q.errors.price} />
         <div style={{ marginTop: 16 }}>
           <button className="btn" type="submit">Check the price</button>
         </div>
       </form>
+
+      <div id="results" />
 
       {ok && !est ? (
         <div className="card warn">

@@ -48,9 +48,19 @@ Description of every feature developed in this project. Add an entry for each ne
 
 ## v4 after the click-through review (`docs/SPEC.md` section 11)
 - Inline field errors under each field (`lib/forms.ts`: `validateUnitForm`, `validateClaim`, per-field errors on `/rent`, `/buy`).
-- One pilot building: `ACTIVE_BUILDINGS` in `lib/types.ts`; others "coming soon" in search and selects, coming-soon screen on direct links, mocked "Notify me" waitlist.
+- One pilot building: `ACTIVE_BUILDINGS` in `lib/types.ts`; others "coming soon" in search and selects; the pilot is prefilled with a "Continue" card on `/own` and preselected on `/rent`, `/buy`, coming-soon screen on direct links, mocked "Notify me" waitlist.
 - Pitch first screen (`app/page.tsx`) and site entry points (`app/entry-points/page.tsx`).
 - "What this means" readings with tone and action: price level, momentum, liquidity, yield, letting wave, market; renter and buyer advice (`lib/insights.ts`, `app/components/insights.tsx`).
 - Price chart building vs JVC with tooltip and table view (`app/components/price-chart.tsx`).
 - My Home tabs: Update / Analysis / News / Owners; news from real data plus labelled illustrative items; illustrative owners' community with reactions (`lib/news.ts`, `app/components/feed.tsx`).
 - Tests: `tests/app/insights_news.test.ts`, new cases in `forms_format.test.ts` and `smoke.test.tsx`.
+
+## Demo prefill (`docs/SPEC.md` section 12)
+- Every field of every form opens with a demo value and stays editable: unit picker, "Get this every month" sheet, plans card, agent request, status sheet, `/rent`, `/buy`. After a submit the form shows exactly what the user sent, so empty-field errors still work. Switching rent out / sell / offers loads the matching default price.
+- Files: `lib/demo.ts` (values + `prefill` helper), forms in `app/components/`, `app/rent/page.tsx`, `app/buy/page.tsx`.
+- Tests: `tests/app/demo_prefill.test.tsx`.
+
+## Sanity checks (`docs/SPEC.md` section 13)
+- Plausible ranges for every money, date and code field: rent, prices, loan vs price paid, lease end, start dates, increase %, mortgage rate, unit number, title deed. Messages under the field in every form; a bad mortgage rate falls back to the example rate without hiding results; out-of-range deep-link values are ignored.
+- Files: `lib/sanity.ts` (limits and checks), used by `lib/forms.ts`, `lib/owner.ts` (`leadFieldErrors`, `validateIntent`, `parseUnitQuery`) and the form components.
+- Tests: `tests/app/sanity.test.ts` (each rule at both bounds, forms, deep links, `/rent` messages).

@@ -8,8 +8,9 @@ import { searchBuildings, type Building } from "@/lib/market";
 import { roomsLabel } from "@/lib/format";
 import { getHomes, homeId, saveHome, type Home } from "@/lib/owner";
 import { AS_OF, SQFT_PER_SQM } from "@/lib/types";
-import { hasErrors, validateClaim, validateUnitForm, type FieldErrors } from "@/lib/forms";
+import { hasErrors, validateClaim, validateUnitForm, type ClaimErrors, type FieldErrors } from "@/lib/forms";
 import { track } from "@/lib/track";
+import { DEMO } from "@/lib/demo";
 
 /** Fires one event when the screen is shown. */
 export function Track({ name, props }: { name: EventName; props?: Record<string, string | number | boolean | null> }) {
@@ -87,8 +88,12 @@ export function homeQuery(h: Pick<Home, "unitNumber" | "rooms" | "sizeSqm" | "oc
 export const homeUrl = (h: Home) => `/own/${h.slug}/home?${homeQuery(h)}`;
 
 export function BuildingSearch({ buildings }: { buildings: Building[] }) {
-  const [q, setQ] = useState("");
+  const pilot = buildings.find((b) => b.active)!;
+  const [q, setQ] = useState(pilot.name);
+  const isPilot = q.trim().toLowerCase() === pilot.name.toLowerCase();
   const hits = useMemo(() => searchBuildings(buildings, q, 8), [buildings, q]);
+  const soon = isPilot ? buildings.filter((b) => !b.active).slice(0, 5) : hits.filter((b) => !b.active);
+  const open = isPilot ? [pilot] : hits.filter((b) => b.active);
   return (
     <div>
       <label htmlFor="bsearch">Building</label>
@@ -98,31 +103,33 @@ export function BuildingSearch({ buildings }: { buildings: Building[] }) {
         placeholder="Start typing, e.g. Luma"
         value={q}
         onChange={(e) => setQ(e.target.value)}
+        onFocus={(e) => e.currentTarget.select()}
       />
-      {q && hits.length === 0 ? (
-        <Waitlist name={q} />
-      ) : (
-        <ul className="suggest">
-          {hits.map((b) =>
-            b.active ? (
-              <li key={b.slug}>
-                <Link href={`/own/${b.slug}`}>
-                  <span>
-                    {b.name} <span className="badge ok">Open</span>
-                  </span>
-                  <span className="meta">{b.resales} resales</span>
-                </Link>
-              </li>
-            ) : (
+      {open.map((b) => (
+        <Link key={b.slug} className="pick" href={`/own/${b.slug}`}>
+          <span>
+            <b>{b.name}</b>
+            <span className="meta"> · JVC · {b.resales} resales in 2026</span>
+            <br />
+            <span className="badge ok">Open in the pilot</span>
+          </span>
+          <span className="pick-cta">Continue ›</span>
+        </Link>
+      ))}
+      {q && hits.length === 0 ? <Waitlist name={q} /> : null}
+      {soon.length ? (
+        <>
+          <p className="tiny" style={{ marginTop: 12 }}>Other JVC buildings · coming soon</p>
+          <ul className="suggest">
+            {soon.map((b) => (
               <li key={b.slug} aria-disabled="true" className="soon">
                 <span>{b.name}</span>
                 <span className="badge">Coming soon</span>
               </li>
-            ),
-          )}
-        </ul>
-      )}
-      <p className="hint">The pilot is open for one building. Others in JVC follow.</p>
+            ))}
+          </ul>
+        </>
+      ) : null}
     </div>
   );
 }
@@ -177,10 +184,12 @@ export function UnitForm({
 }) {
   const router = useRouter();
   const options = roomOptions.length ? roomOptions : [0, 1, 2, 3].map((r) => ({ rooms: r, medianSize: [38, 75, 115, 160][r], count: 0 }));
-  const [unit, setUnit] = useState(initial?.unit ?? "");
-  const [rooms, setRooms] = useState<number>(initial?.rooms ?? options[0].rooms);
+  const [unit, setUnit] = useState(initial?.unit || DEMO.unit);
+  const [rooms, setRooms] = useState<number>(
+    initial?.rooms ?? (options.some((o) => o.rooms === DEMO.rooms) ? DEMO.rooms : options[0].rooms),
+  );
   const [unitSys, setUnitSys] = useState<"sqm" | "sqft">("sqm");
-  const [size, setSize] = useState<string>(initial?.sizeSqm ? String(initial.sizeSqm) : "");
+  const [size, setSize] = useState<string>(String(initial?.sizeSqm ?? DEMO.sizeSqm));
   const [errors, setErrors] = useState<FieldErrors<"unit" | "size">>({});
 
   const typical = options.find((o) => o.rooms === rooms)?.medianSize;
@@ -260,20 +269,20 @@ interface UnitCtx {
 export function GetMonthly({ ctx, prefillPaid }: { ctx: UnitCtx; prefillPaid?: number | null }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [occ, setOcc] = useState<"let" | "live">("let");
-  const [rent, setRent] = useState("");
-  const [leaseEnd, setLeaseEnd] = useState("");
-  const [paid, setPaid] = useState(prefillPaid ? String(prefillPaid) : "");
-  const [loan, setLoan] = useState("");
-  const [deed, setDeed] = useState("");
-  const [consent, setConsent] = useState(false);
-  const [unitNo, setUnitNo] = useState(ctx.unitNumber);
-  const [errors, setErrors] = useState<FieldErrors<"unit" | "rent" | "leaseEnd" | "consent">>({});
-  const clear = (k: "unit" | "rent" | "leaseEnd" | "consent") => setErrors((x) => ({ ...x, [k]: undefined }));
+  const [occ, setOcc] = useState<"let" | "live">(DEMO.owner.occupancy);
+  const [rent, setRent] = useState(String(DEMO.owner.annualRent));
+  const [leaseEnd, setLeaseEnd] = useState<string>(DEMO.owner.leaseEnd);
+  const [paid, setPaid] = useState(String(prefillPaid ?? DEMO.owner.pricePaid));
+  const [loan, setLoan] = useState(String(DEMO.owner.loan));
+  const [deed, setDeed] = useState<string>(DEMO.owner.titleDeed);
+  const [consent, setConsent] = useState<boolean>(DEMO.owner.consent);
+  const [unitNo, setUnitNo] = useState(ctx.unitNumber || DEMO.unit);
+  const [errors, setErrors] = useState<ClaimErrors>({});
+  const clear = (k: keyof ClaimErrors) => setErrors((x) => ({ ...x, [k]: undefined }));
 
   function save(e: React.FormEvent) {
     e.preventDefault();
-    const errs = validateClaim({ unit: unitNo, occupancy: occ, rent, leaseEnd, consent });
+    const errs = validateClaim({ unit: unitNo, occupancy: occ, rent, leaseEnd, consent, paid, loan, deed });
     setErrors(errs);
     if (hasErrors(errs)) return;
     const num = (s: string) => (Number(s) > 0 ? Number(s) : null);
@@ -359,15 +368,18 @@ export function GetMonthly({ ctx, prefillPaid }: { ctx: UnitCtx; prefillPaid?: n
             <div className="grid2">
               <div>
                 <label htmlFor="paid">Price paid, AED</label>
-                <input id="paid" inputMode="numeric" value={paid} onChange={(e) => setPaid(e.target.value)} placeholder="optional" />
+                <input id="paid" inputMode="numeric" value={paid} aria-invalid={!!errors.paid} onChange={(e) => { setPaid(e.target.value); clear("paid"); clear("loan"); }} placeholder="optional" />
+                <FieldError id="paid-err" msg={errors.paid} />
               </div>
               <div>
                 <label htmlFor="loan">Loan left, AED</label>
-                <input id="loan" inputMode="numeric" value={loan} onChange={(e) => setLoan(e.target.value)} placeholder="optional" />
+                <input id="loan" inputMode="numeric" value={loan} aria-invalid={!!errors.loan} onChange={(e) => { setLoan(e.target.value); clear("loan"); }} placeholder="optional" />
+                <FieldError id="loan-err" msg={errors.loan} />
               </div>
             </div>
             <label htmlFor="deed">Title deed number</label>
-            <input id="deed" value={deed} onChange={(e) => setDeed(e.target.value)} placeholder="optional, to verify you own it" maxLength={30} />
+            <input id="deed" value={deed} aria-invalid={!!errors.deed} onChange={(e) => { setDeed(e.target.value); clear("deed"); }} placeholder="optional, to verify you own it" maxLength={30} />
+            <FieldError id="deed-err" msg={errors.deed} />
             <p className="hint">Verification is simulated in this prototype: nothing is checked or sent.</p>
             <label className="check" style={{ marginTop: 16 }}>
               <input type="checkbox" checked={consent} onChange={(e) => { setConsent(e.target.checked); clear("consent"); }} aria-invalid={!!errors.consent} />

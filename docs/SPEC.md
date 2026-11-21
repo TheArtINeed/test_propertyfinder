@@ -1,6 +1,6 @@
 # Dev spec: PropWorth "My Home" prototype
 
-Status: draft v4, 2026-11-21 (v4 changes after the first click-through review: section 11). Scope = what we build in the timed task (~3 h). Business framing will live in `ONE-PAGER.md` (to be written). Support cases are detailed in `prep/support_cases_spec.md`; section 9 here is the single list of all cases with v2 priorities.
+Status: draft v6, 2026-11-21 (v4 review changes: section 11; v5 demo prefill: section 12; v6 sanity checks: section 13). Scope = what we build in the timed task (~3 h). Business framing will live in `ONE-PAGER.md` (to be written). Support cases are detailed in `prep/support_cases_spec.md`; section 9 here is the single list of all cases with v2 priorities.
 
 ## 1. Idea in one line
 A resale buyer's search does not end at the key handover: after the PropWorth valuation, the unit becomes **"My Home"**, and every month the owner gets a **digest** tied to money that moves anyway (rent in, mortgage out): rents and deals in the building, demand for a unit like theirs, and one next step. The owner sets an **intent** ("rent out from / open to offers from X / not now"), which becomes a qualified lead for agents and an **"owner-confirmed"** signal for renters.
@@ -155,3 +155,42 @@ Review findings: the product is not "sold" to the user (why come, why sign up, w
 
 New events: `waitlist_joined`, `entry_point_clicked`, `feed_opened`, `post_reacted`, `insight_opened`.
 Not real (README): editorial news, community posts, demand, waitlist. The analysis readings use real DLD / Ejari data only.
+
+## 12. v5: demo prefill
+So reviewers can click through without typing, **every field of every form is prefilled with a demo value and stays editable**. One source of demo values: `lib/demo.ts` (a 1BR, 80 m² unit in Luma Park Views, let at AED 95K until 31 Jan 2027).
+
+| ID | Form | Prefill |
+|---|---|---|
+| V10a | Find my home | Luma Park Views (done in v4) |
+| V10b | Unit picker | unit 1204, 1BR, 80 m² |
+| V10c | "Get this every month" sheet | I let it, rent AED 95,000, lease ends 2027-01-31, price paid AED 1,100,000, loan AED 600,000, title deed DEMO-0001, consent ticked |
+| V10d | Plans card | Rent out from 2027-02-01 at the market rent (new leases median); "Open to offers" switches to the top of the estimate range |
+| V10e | Agent request sheet | intent and price from the plans card, available from 2027-02-01, contact WhatsApp, consent ticked |
+| V10f | Status sheet | current status; for "I let it" the saved rent and lease end, else the demo ones |
+| V10g | `/rent` | Luma Park Views, 1BR, 80 m², rent AED 90,000, lease ends 2027-02-15, landlord asks 10% |
+| V10h | `/buy` | Luma Park Views, 1BR, 80 m², asking AED 1,450,000 |
+
+Rules:
+- Prefill only on first open. After a submit the form shows what the user sent, including empty fields, so the V1 errors still appear.
+- Results are not shown until the user presses the button: prefill saves typing, it does not skip the step.
+- Consent is ticked only because this is a demo: a real product never pre-ticks consent (README says so).
+- Acceptance: every input, select and checkbox renders with a value; editing works; an empty submit still shows errors; tested.
+
+## 13. v6: sanity checks
+Inputs must be plausible for a JVC home, not only "a positive number". One set of limits in `lib/sanity.ts`; the error shows under the field (V1). Today = 2026-11-21 (the prototype's fixed date).
+
+| Field | Rule | Message (example) |
+|---|---|---|
+| Annual rent (owner, renter, status, plans, lead) | AED 10,000 – 2,000,000 | "Enter a yearly rent between AED 10,000 and 2,000,000" |
+| Price paid, asking price, offers from, sale price | AED 100,000 – 50,000,000 | "Enter a price between AED 100,000 and 50,000,000" |
+| Loan left | AED 0 – 50,000,000 and not more than the price paid | "The loan can't be more than the price paid" |
+| Lease end (owner, status, renter) | not in the past, at most 5 years ahead | "The lease end is in the past: enter the current lease" |
+| Rent out from, available from | today to 2 years ahead | "Pick a date from today to 2 years ahead" |
+| Landlord asks for an increase | 0 – 100% | "Enter 0 to 100%" |
+| Mortgage rate | 0 – 20% | "Enter a rate from 0 to 20%" |
+| Title deed (optional) | 3 – 30 letters, digits or dashes | "Use letters, digits and dashes" |
+| Unit number | 1 – 12 letters, digits or dashes | "Use letters, digits and dashes" |
+| Size | 15 – 1,500 m² (as in V1) | unchanged |
+
+- Deep links: out-of-range URL values (e.g. `paid=10000000000`) are ignored, as if not given, so My Home never shows absurd equity or gains.
+- Acceptance: every rule tested at both bounds; every form shows the message under its field; demo values pass all rules.

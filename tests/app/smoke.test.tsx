@@ -68,8 +68,13 @@ describe("smoke: every route renders for the hero building and has a next action
     expect(c).not.toContain("What are your plans?");
   });
 
-  it("/own suggests the hero building", async () => {
-    expect(await html(<Own />)).toContain("Luma Park Views");
+  it("/own prefills the pilot building with a Continue action; others are not links", async () => {
+    const h = await html(<Own />);
+    expect(h).toContain('value="Luma Park Views"');
+    expect(h).toMatch(/<a class="pick" href="\/own\/luma-park-views">/);
+    expect(h).toContain("Continue ›");
+    expect(h).toContain("Coming soon");
+    expect(h).not.toContain('href="/own/binghatti-apex"');
   });
 
   it("/own/[building] asks only unit number, rooms, size", async () => {
@@ -103,6 +108,35 @@ describe("smoke: every route renders for the hero building and has a next action
     const h = await html(Rent({ searchParams: Promise.resolve({ b: hero, rooms: "1", size: "80", rent: "90000", end: "2027-02-15", ask: "10" }) }));
     for (const s of ["Rent watch", "What this means", "At renewal", "Owner-confirmed", "Rent vs buy", "Rental Dispute Center", 'href="/buy?b=luma-park-views'])
       expect(h).toContain(s);
+  });
+
+  it("/rent and /buy forms carry the hidden submit marker", async () => {
+    expect(await html(Rent({ searchParams: Promise.resolve({}) }))).toContain('<input type="hidden" name="go" value="1"/>');
+    expect(await html(Buy({ searchParams: Promise.resolve({}) }))).toContain('<input type="hidden" name="go" value="1"/>');
+    // After submit the page jumps to the results, which sit below the form on a phone.
+    expect(await html(Rent({ searchParams: Promise.resolve({}) }))).toContain('action="/rent#results"');
+    expect(await html(Buy({ searchParams: Promise.resolve({}) }))).toContain('action="/buy#results"');
+    expect(await html(Rent({ searchParams: Promise.resolve({ go: "1", b: hero, size: "80", rent: "90000" }) }))).toContain('<div id="results"></div>');
+  });
+
+  it("/rent empty submit: an error under each empty field, no results", async () => {
+    const h = await html(Rent({ searchParams: Promise.resolve({ go: "1", b: hero, rooms: "1", size: "", rent: "", end: "", ask: "" }) }));
+    const sizeInput = h.indexOf('id="size"');
+    const sizeErr = h.indexOf("Enter your size in m²");
+    const rentInput = h.indexOf('id="rent"');
+    const rentErr = h.indexOf("Enter your annual rent");
+    expect(sizeErr).toBeGreaterThan(sizeInput);
+    expect(rentErr).toBeGreaterThan(rentInput);
+    expect(rentErr).toBeLessThan(h.indexOf("Check my rent"));
+    expect(h).toContain('aria-invalid="true"');
+    expect(h).not.toContain("Rent watch");
+  });
+
+  it("/buy empty submit: errors under size and price, no results", async () => {
+    const h = await html(Buy({ searchParams: Promise.resolve({ go: "1", b: hero, rooms: "1", size: "", price: "" }) }));
+    expect(h).toContain("Enter the size in m²");
+    expect(h).toContain("Enter the asking price");
+    expect(h).not.toContain("Fair price");
   });
 
   it("/rent shows input errors instead of results", async () => {

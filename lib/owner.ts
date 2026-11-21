@@ -1,5 +1,7 @@
 /** Owner-side state: saved homes, status history, intent, leads. Works on any Storage (localStorage in the app). */
 import type { OwnerDetails } from "./digest";
+import { checkPrice, checkRent, checkStartDate, inRange, LIMITS } from "./sanity";
+import { AS_OF } from "./types";
 
 export type Status = "let" | "live" | "for_sale" | "not_available";
 export const STATUS_LABEL: Record<Status, string> = {
@@ -66,13 +68,42 @@ export interface LeadDraft {
 
 /** Returns a list of problems; empty means the lead can be sent. */
 export function validateLead(d: LeadDraft): string[] {
-  const errors: string[] = [];
-  if (!d.intent) errors.push("Choose rent out or sell");
-  if (!d.contact) errors.push("Choose how the agent contacts you");
-  if (!d.askingPrice || d.askingPrice <= 0) errors.push("Enter a price");
-  if (!d.availableFrom) errors.push("Pick a date");
-  if (!d.consent) errors.push("Agree to be contacted via PF");
-  return errors;
+  return Object.values(leadFieldErrors(d)) as string[];
+}
+
+/** Lead errors by field (shown under each field). Sanity ranges from spec section 13. */
+export function leadFieldErrors(d: LeadDraft): Partial<Record<"intent" | "price" | "date" | "contact" | "consent", string>> {
+  const e: Partial<Record<"intent" | "price" | "date" | "contact" | "consent", string>> = {};
+  if (!d.intent) e.intent = "Choose rent out or sell";
+  if (!d.askingPrice || d.askingPrice <= 0) e.price = "Enter a price";
+  else if (d.intent) {
+    const m = d.intent === "sell" ? checkPrice(d.askingPrice) : checkRent(d.askingPrice);
+    if (m) e.price = m;
+  }
+  if (!d.availableFrom) e.date = "Pick a date";
+  else {
+    const m = checkStartDate(d.availableFrom);
+    if (m) e.date = m;
+  }
+  if (!d.contact) e.contact = "Choose how the agent contacts you";
+  if (!d.consent) e.consent = "Agree to be contacted via PF";
+  return e;
+}
+
+/** Plans card (O6): rent out needs a date and a rent; offers need a price. */
+export function validateIntent(i: { kind: IntentKind; date: string; price: string }): Partial<Record<"date" | "price", string>> {
+  const e: Partial<Record<"date" | "price", string>> = {};
+  if (i.kind === "rent_out") {
+    const d = i.date ? checkStartDate(i.date) : "Pick a date";
+    if (d) e.date = d;
+    const p = i.price.trim() === "" ? "Enter the rent" : checkRent(i.price);
+    if (p) e.price = p;
+  }
+  if (i.kind === "open_to_offers") {
+    const p = i.price.trim() === "" ? "Enter a price" : checkPrice(i.price);
+    if (p) e.price = p;
+  }
+  return e;
 }
 
 export function buildLead(home: Home, d: Required<LeadDraft>, estimate: Lead["estimate"], now: string): Lead {
@@ -205,10 +236,11 @@ export function parseUnitQuery(q: Record<string, string | string[] | undefined>)
     unit: (one("unit") ?? "").slice(0, 12),
     rooms,
     sizeSqm: size,
-    pricePaid: num("paid"),
-    loan: num("loan"),
-    annualRent: num("rent"),
-    leaseEnd: /^\d{4}-\d{2}-\d{2}$/.test(one("leaseEnd") ?? "") ? one("leaseEnd")! : null,
+    // Out-of-range deep-link values are ignored, as if not given (spec section 13).
+    pricePaid: inRange(num("paid"), LIMITS.price),
+    loan: inRange(num("loan"), [LIMITS.loan[0], Math.min(LIMITS.loan[1], inRange(num("paid"), LIMITS.price) ?? LIMITS.loan[1])]),
+    annualRent: inRange(num("rent"), LIMITS.rent),
+    leaseEnd: /^\d{4}-\d{2}-\d{2}$/.test(one("leaseEnd") ?? "") && one("leaseEnd")! >= AS_OF ? one("leaseEnd")! : null,
     occupancy: one("occ") === "let" ? ("let" as const) : one("occ") === "live" ? ("live" as const) : undefined,
     from: one("from") ?? null,
   };

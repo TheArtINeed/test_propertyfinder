@@ -6,10 +6,13 @@ import { useEffect, useState } from "react";
 import { aed, dateLabel, roundEstimate } from "@/lib/format";
 import {
   addLead, buildLead, deleteAllData, getHome, getLeads, removeHome, saveHome, setIntent, setStatus,
-  STATUS_LABEL, validateLead, type ContactMethod, type Home, type IntentKind, type Lead, type Status,
+  STATUS_LABEL, leadFieldErrors, validateIntent, type ContactMethod, type Home, type IntentKind, type Lead, type Status,
 } from "@/lib/owner";
 import { AS_OF } from "@/lib/types";
 import { track } from "@/lib/track";
+import { checkLeaseEnd, checkRent } from "@/lib/sanity";
+import { FieldError } from "../ui";
+import { DEMO } from "@/lib/demo";
 import { homeUrl } from "./client";
 
 interface Props {
@@ -52,9 +55,11 @@ export function HomePanel({ id, fallback, estimate, marketRent }: Props) {
   }
 
   // Intent card (O6)
-  const [kind, setKind] = useState<IntentKind>(fallback.intent?.kind ?? "not_now");
-  const [date, setDate] = useState(fallback.intent?.date ?? "");
-  const [price, setPrice] = useState<string>(fallback.intent?.price ? String(fallback.intent.price) : "");
+  const [kind, setKind] = useState<IntentKind>(fallback.intent?.kind ?? "rent_out");
+  const [date, setDate] = useState<string>(fallback.intent?.date ?? DEMO.plans.rentOutFrom);
+  const [price, setPrice] = useState<string>(
+    fallback.intent?.price ? String(fallback.intent.price) : marketRent ? String(roundEstimate(marketRent)) : "",
+  );
   useEffect(() => {
     if (home.intent) {
       setKind(home.intent.kind);
@@ -64,12 +69,20 @@ export function HomePanel({ id, fallback, estimate, marketRent }: Props) {
   }, [home.intent]);
 
   function chooseKind(k: IntentKind) {
+    if (k === kind) return;
     setKind(k);
-    if (k === "rent_out" && !price && marketRent) setPrice(String(roundEstimate(marketRent)));
-    if (k === "open_to_offers" && !price) setPrice(String(roundEstimate(estimate.high)));
+    setIntentErrors({});
+    // Each plan has its own demo default: a rent per year vs a sale price.
+    if (home.intent?.kind === k && home.intent.price) setPrice(String(home.intent.price));
+    else if (k === "rent_out") setPrice(marketRent ? String(roundEstimate(marketRent)) : "");
+    else if (k === "open_to_offers") setPrice(String(roundEstimate(estimate.high)));
   }
 
+  const [intentErrors, setIntentErrors] = useState<Partial<Record<"date" | "price", string>>>({});
   function saveIntent() {
+    const errs = validateIntent({ kind, date, price });
+    setIntentErrors(errs);
+    if (Object.keys(errs).length) return;
     const intent = { kind, date: kind === "rent_out" ? date || null : null, price: kind === "not_now" ? null : Number(price) || null, setAt: AS_OF };
     const s = store();
     const next = { ...home, intent };
@@ -99,23 +112,26 @@ export function HomePanel({ id, fallback, estimate, marketRent }: Props) {
           <div className="grid2">
             <div>
               <label htmlFor="i-date">From</label>
-              <input id="i-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <input id="i-date" type="date" value={date} aria-invalid={!!intentErrors.date} onChange={(e) => { setDate(e.target.value); setIntentErrors((x) => ({ ...x, date: undefined })); }} />
+              <FieldError msg={intentErrors.date} />
             </div>
             <div>
               <label htmlFor="i-rent">Rent, AED / year</label>
-              <input id="i-rent" inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value)} />
+              <input id="i-rent" inputMode="numeric" value={price} aria-invalid={!!intentErrors.price} onChange={(e) => { setPrice(e.target.value); setIntentErrors((x) => ({ ...x, price: undefined })); }} />
+              <FieldError msg={intentErrors.price} />
             </div>
           </div>
         ) : null}
         {kind === "open_to_offers" ? (
           <>
             <label htmlFor="i-price">Offers from, AED</label>
-            <input id="i-price" inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value)} />
+            <input id="i-price" inputMode="numeric" value={price} aria-invalid={!!intentErrors.price} onChange={(e) => { setPrice(e.target.value); setIntentErrors((x) => ({ ...x, price: undefined })); }} />
+            <FieldError msg={intentErrors.price} />
             <p className="hint">PF estimate {aed(roundEstimate(estimate.low), { compact: true })} – {aed(roundEstimate(estimate.high), { compact: true })}</p>
           </>
         ) : null}
         <div style={{ marginTop: 12 }}>
-          <button className="btn" type="button" onClick={saveIntent} disabled={kind === "rent_out" && (!date || !(Number(price) > 0))}>
+          <button className="btn" type="button" onClick={saveIntent}>
             {kind === "not_now" ? "Save" : "Save and find an agent"}
           </button>
         </div>
@@ -184,6 +200,7 @@ export function HomePanel({ id, fallback, estimate, marketRent }: Props) {
           defaultPrice={Number(price) || (kind === "rent_out" ? marketRent ?? 0 : estimate.mid)}
           defaultIntent={kind === "rent_out" ? "rent_out" : "sell"}
           defaultDate={date}
+          rentDefault={marketRent ? roundEstimate(marketRent) : 0}
           onClose={() => setSheet(null)}
           onSent={(lead) => {
             const s = store();
@@ -280,9 +297,11 @@ function StatusSheet({
   onSave: (s: Status, extra: { annualRent?: number | null; leaseEnd?: string | null }) => void;
 }) {
   const [status, setS] = useState<Status>(home.status ?? "live");
-  const [rent, setRent] = useState(home.annualRent ? String(home.annualRent) : "");
-  const [leaseEnd, setLeaseEnd] = useState(home.leaseEnd ?? "");
-  const invalid = status === "let" && (!(Number(rent) > 0) || !leaseEnd);
+  const [rent, setRent] = useState(String(home.annualRent ?? DEMO.owner.annualRent));
+  const [leaseEnd, setLeaseEnd] = useState<string>(home.leaseEnd ?? DEMO.owner.leaseEnd);
+  const rentErr = status === "let" ? (rent.trim() === "" ? "Enter the annual rent" : checkRent(rent)) : undefined;
+  const endErr = status === "let" ? (leaseEnd === "" ? "Pick the lease end date" : checkLeaseEnd(leaseEnd)) : undefined;
+  const invalid = !!(rentErr || endErr);
   return (
     <div className="sheet-backdrop" role="dialog" aria-modal="true" aria-label="Change status" onClick={onClose}>
       <div className="sheet" onClick={(e) => e.stopPropagation()}>
@@ -298,11 +317,13 @@ function StatusSheet({
           <div className="grid2">
             <div>
               <label htmlFor="s-rent">Annual rent, AED</label>
-              <input id="s-rent" inputMode="numeric" value={rent} onChange={(e) => setRent(e.target.value)} />
+              <input id="s-rent" inputMode="numeric" value={rent} aria-invalid={!!rentErr} onChange={(e) => setRent(e.target.value)} />
+              <FieldError msg={rentErr} />
             </div>
             <div>
               <label htmlFor="s-end">Lease ends</label>
-              <input id="s-end" type="date" value={leaseEnd} onChange={(e) => setLeaseEnd(e.target.value)} />
+              <input id="s-end" type="date" value={leaseEnd} aria-invalid={!!endErr} onChange={(e) => setLeaseEnd(e.target.value)} />
+              <FieldError msg={endErr} />
             </div>
           </div>
         ) : null}
@@ -323,6 +344,7 @@ function LeadSheet({
   defaultPrice,
   defaultIntent,
   defaultDate,
+  rentDefault,
   onClose,
   onSent,
 }: {
@@ -331,17 +353,25 @@ function LeadSheet({
   defaultPrice: number;
   defaultIntent: Lead["intent"];
   defaultDate: string;
+  rentDefault: number;
   onClose: () => void;
   onSent: (l: Lead) => void;
 }) {
   const [intent, setIntentKind] = useState<Lead["intent"]>(defaultIntent);
   const [askingPrice, setAsking] = useState(String(Math.round(defaultPrice) || ""));
-  const [availableFrom, setFrom] = useState(defaultDate || "");
-  const [contact, setContact] = useState<ContactMethod | null>(null);
-  const [consent, setConsent] = useState(false);
+  const [availableFrom, setFrom] = useState<string>(defaultDate || DEMO.plans.rentOutFrom);
+  const [contact, setContact] = useState<ContactMethod | null>(DEMO.lead.contact);
+  const [consent, setConsent] = useState<boolean>(DEMO.lead.consent);
   const [sent, setSent] = useState<Lead | null>(null);
+  // Each intent has its own demo price: a rent per year vs a sale price.
+  function switchIntent(k: Lead["intent"]) {
+    if (k === intent) return;
+    setIntentKind(k);
+    setAsking(String(Math.round(k === defaultIntent ? defaultPrice : k === "sell" ? roundEstimate(estimate.mid) : rentDefault)));
+  }
   const draft = { intent, askingPrice: Number(askingPrice), availableFrom, contact, consent };
-  const errors = validateLead(draft);
+  const fieldErrors = leadFieldErrors(draft);
+  const errors = Object.values(fieldErrors);
 
   function send() {
     if (errors.length) return;
@@ -366,17 +396,19 @@ function LeadSheet({
           <>
             <h2>Find an agent</h2>
             <div className="chips">
-              <button className="chip" aria-pressed={intent === "rent_out"} onClick={() => setIntentKind("rent_out")}>Rent out</button>
-              <button className="chip" aria-pressed={intent === "sell"} onClick={() => setIntentKind("sell")}>Sell</button>
+              <button className="chip" aria-pressed={intent === "rent_out"} onClick={() => switchIntent("rent_out")}>Rent out</button>
+              <button className="chip" aria-pressed={intent === "sell"} onClick={() => switchIntent("sell")}>Sell</button>
             </div>
             <div className="grid2">
               <div>
                 <label htmlFor="l-price">{intent === "sell" ? "Asking price, AED" : "Rent, AED / year"}</label>
-                <input id="l-price" inputMode="numeric" value={askingPrice} onChange={(e) => setAsking(e.target.value)} />
+                <input id="l-price" inputMode="numeric" value={askingPrice} aria-invalid={!!fieldErrors.price} onChange={(e) => setAsking(e.target.value)} />
+                <FieldError msg={fieldErrors.price} />
               </div>
               <div>
                 <label htmlFor="l-date">Available from</label>
-                <input id="l-date" type="date" value={availableFrom} onChange={(e) => setFrom(e.target.value)} />
+                <input id="l-date" type="date" value={availableFrom} aria-invalid={!!fieldErrors.date} onChange={(e) => setFrom(e.target.value)} />
+                <FieldError msg={fieldErrors.date} />
               </div>
             </div>
             {intent === "sell" ? (
@@ -404,7 +436,7 @@ function LeadSheet({
               <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
               <span>An agent may contact me via PF about this request.</span>
             </label>
-            {errors.length && (contact || consent) ? <p className="error">{errors[0]}</p> : null}
+            <FieldError msg={fieldErrors.contact ?? fieldErrors.consent} />
             <div style={{ marginTop: 16 }}>
               <button className="btn" disabled={errors.length > 0} onClick={send}>Send request</button>
             </div>

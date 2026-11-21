@@ -9,8 +9,15 @@ describe("rent form", () => {
   });
   it("is not submitted on first open and reports bad input after submit", () => {
     expect(parseRentQuery({}).submitted).toBe(false);
+    expect(parseRentQuery({}).rooms).toBe(1); // empty -> 1BR, not studio
+    expect(parseBuyQuery({ rooms: "0" }).rooms).toBe(0);
     const q = parseRentQuery({ size: "5", rent: "abc", end: "tomorrow", rooms: "9" });
-    expect(q.errors).toEqual({ size: "Enter your size in m² (15 – 1,500)", rent: "Enter your annual rent" });
+    // Updated for sanity checks (spec 13): a non-number rent and a non-date lease end now get range messages.
+    expect(q.errors).toEqual({
+      size: "Enter your size in m² (15 – 1,500)",
+      rent: "Enter a yearly rent between AED 10,000 and 2,000,000",
+      end: "Pick the lease end date",
+    });
     expect(q.leaseEnd).toBeNull();
     expect(q.rooms).toBe(1);
   });
@@ -46,5 +53,25 @@ describe("inline field errors (V1)", () => {
     expect(Object.keys(validateClaim({ unit: "", occupancy: "let", rent: "", leaseEnd: "", consent: false })).sort()).toEqual([
       "consent", "leaseEnd", "rent", "unit",
     ]);
+  });
+});
+
+describe("empty and partial submits always show errors", () => {
+  it("/rent: empty submit (only the hidden go=1) flags size and rent", () => {
+    const q = parseRentQuery({ go: "1", b: "luma-park-views", rooms: "1", size: "", rent: "", end: "", ask: "" });
+    expect(q.submitted).toBe(true);
+    expect(Object.keys(q.errors).sort()).toEqual(["rent", "size"]);
+  });
+  it("/rent: only rent filled -> only the size error", () => {
+    const q = parseRentQuery({ go: "1", size: "", rent: "85000" });
+    expect(q.errors).toEqual({ size: "Enter your size in m² (15 – 1,500)" });
+  });
+  it("/rent: first open (no go) shows no errors", () => {
+    expect(parseRentQuery({ b: "luma-park-views" }).errors).toEqual({});
+  });
+  it("/buy: empty submit flags size and price", () => {
+    const q = parseBuyQuery({ go: "1", b: "luma-park-views", rooms: "1", size: "", price: "" });
+    expect(q.submitted).toBe(true);
+    expect(Object.keys(q.errors).sort()).toEqual(["price", "size"]);
   });
 });
