@@ -136,3 +136,9 @@ Description of every feature developed in this project. Add an entry for each ne
 
 ## Market move impact (N2 amended)
 - `dataNews` in `lib/news.ts`: deal count ±20% vs the usual month, new-lease rents ±3% vs the 3 months before, top deal vs the owner's estimate range -> Up / Down / Neutral; shown as coloured pills. Tests: `tests/app/news_impact.test.ts`.
+
+## First screen: a reason to start (`docs/SPEC.md` section 24, v17)
+- First-time user: hero with the three actions and a trust line ("Free · no sign-up to see the value · Dubai Land Department deals"), an "Example" card with real numbers for a 1BR in the pilot building for October 2026 (value range, new-lease median, resales; same functions as the valuation and digest), and "After your first estimate": four one-line benefits (monthly value, rent and lease reminder, agents only when asked, Golden Visa threshold). About 1.7 screens at 375 x 812.
+- Returning owner (1+ saved homes): the PropWorth card sits above the actions; the example and benefits fold into "What PropWorth tracks for you ›" (`first_screen_value_expanded`).
+- Files: `lib/first-screen.ts`, `app/components/first-screen.tsx`, `app/page.tsx`, `app/icons.tsx` (passport icon).
+- Tests: `tests/app/first_screen.test.tsx` (numbers equal valuation and digest, example label, benefits and trust line, D10 cuts kept, returning-owner order and fold, event).

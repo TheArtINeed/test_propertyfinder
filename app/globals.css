@@ -365,3 +365,10 @@ input[aria-invalid="true"] { border-color: var(--error); }
 .impact.up { background: var(--success-bg); color: #00794a; }
 .impact.down { background: var(--error-bg); color: var(--error); }
 .impact.neutral { background: var(--pill); color: var(--text-2); }
+
+/* Spec section 24: first screen reason to start */
+.hint.center { text-align: center; }
+.benefits.compact li { align-items: center; padding: 8px 0; }
+.card.fold > summary { cursor: pointer; font-weight: 600; list-style: none; }
+.card.fold > summary::-webkit-details-marker { display: none; }
+.card.fold[open] > summary { margin-bottom: 12px; }

@@ -1,6 +1,6 @@
 # Dev spec: PropWorth "My Home" prototype
 
-Status: draft v15, 2026-11-21; version 2 (tag v2) builds sections 18-22 except the items listed as not built in README (v15 product hygiene: section 22; v14 design review: section 21; v13 Golden Visa, listings in my building, my dates: section 20; v12 trust and event alerts: section 19; v11 PropWorth portfolio: section 18; v10 as-built audit: section 17; v4 review changes: section 11; v5 demo prefill: section 12; v6 sanity checks: section 13; v7 return and lead loop, separate news: section 14; v8 review fixes: section 15; v9 update preview on the valuation: section 16). Scope = what we build in the timed task (~3 h). Business framing will live in `ONE-PAGER.md` (to be written). Support cases are detailed in `prep/support_cases_spec.md`; section 9 here is the single list of all cases with v2 priorities.
+Status: draft v17, 2026-11-21 (v17 first screen reason to start: section 24); version 2 (tag v2) builds sections 18-22 except the items listed as not built in README (v15 product hygiene: section 22; v14 design review: section 21; v13 Golden Visa, listings in my building, my dates: section 20; v12 trust and event alerts: section 19; v11 PropWorth portfolio: section 18; v10 as-built audit: section 17; v4 review changes: section 11; v5 demo prefill: section 12; v6 sanity checks: section 13; v7 return and lead loop, separate news: section 14; v8 review fixes: section 15; v9 update preview on the valuation: section 16). Scope = what we build in the timed task (~3 h). Business framing will live in `ONE-PAGER.md` (to be written). Support cases are detailed in `prep/support_cases_spec.md`; section 9 here is the single list of all cases with v2 priorities.
 
 ## 1. Idea in one line
 A resale buyer's search does not end at the key handover: after the PropWorth valuation, the unit becomes **"My Home"**, and every month the owner gets a **digest** tied to money that moves anyway (rent in, mortgage out): rents and deals in the building, demand for a unit like theirs, and one next step. The owner sets an **intent** ("rent out from / open to offers from X / not now"), which becomes a qualified lead for agents and an **"owner-confirmed"** signal for renters.
@@ -461,3 +461,22 @@ Not in this step: silent saves from My Home actions (plans, agent request, statu
 **V11 / V15 / V17 amended (phone review 2):** the same multi-select applies to every contact choice: "Find an agent", viewing request, mortgage and agent requests (WhatsApp, Call, Email). Every chooser opens with **all options on** (demo default); the confirmation names them ("WhatsApp, call or email"). Leads store `contacts` plus `contact` (first). Tested.
 
 **N2 amended (phone review):** market moves read too flat ("Neutral" everywhere; the deals rule could only say up or neutral; the leases rule was always neutral). Rules: deal count vs the 2026 monthly average before the month: more than +20% -> up ("More buyers than usual"), less than -20% -> down ("Fewer deals than usual"), else neutral; new-lease median this month vs the 3 months before: more than +3% -> up, less than -3% -> down, else neutral; top deal vs the owner's estimate range: above -> up, below -> down, inside -> neutral ("In line with your estimate"). Every impact shows as a labelled pill (icon + word), neutral included. Tested at each threshold.
+
+## 24. v17: first screen gives a reason to start (D10 revised)
+D10 (section 21) rightly cut the first screen from ~3 screens, but it removed the user-facing value too, on the reading that the brief forbids any pitch. The brief rules out a pitch to the reviewers and instructions; telling the **user** what they get is product copy. Today a first-time user sees a promise and three buttons: no real number, nothing about what comes after one valuation (the brief's own problem: owners check once and leave), no personal hook, no trust line.
+
+**Goal:** about 1.5 screens at 375 x 812 for a first-time user; a returning owner sees their PropWorth first.
+
+| ID | Change | Acceptance | Priority |
+|---|---|---|---|
+| F10a | **Keep from D10**: hero, "Get your PropWorth estimate", "I rent: is my rent fair?", "Buying a resale? Check the price"; no "How it works", "Why save it?", "Not an owner?" or `/entry-points` link | Unchanged; tested | P0 |
+| F10b | **Live proof card** (real data, under the buttons): "Luma Park Views · October 2026: 1BR worth AED x – y · new leases median AED z · N resales", computed by the same functions as the valuation and digest; source line "DLD registered resales and Ejari contracts" | Numbers equal the valuation and digest for the demo 1BR; no hard-coded figures; tested | P0 |
+| F10c | **What you get after the first estimate**: three rows, icon + one line each: "Your value every month, from registered deals"; "Rent it right: what new tenants pay and a reminder 90 days before the lease ends"; "Agents only when you ask: no cold calls". A fourth row when G1 is on: "How far you are from the AED 2M Golden Visa threshold" | Exactly 3-4 rows, one line each at 375 px; no instruction verbs ("tap", "click"); tested | P0 |
+| F10d | **Trust line** under the main button: "Free · no sign-up to see the value · Dubai Land Department deals" | Present once; tested | P0 |
+| F10e | **Returning owner** (1+ homes): the PropWorth card moves to the top, right under the hero title; F10b and F10c collapse into one line "What PropWorth tracks for you ›" that expands in place | With homes: PropWorth card above the buttons, F10b and F10c hidden until expanded; without homes: F10b and F10c shown; tested | P1 |
+
+- Length check: first-time screen at most ~1.5 screens at 375 x 812 (tested by section order and count, checked by eye in the browser).
+- Event: `first_screen_value_expanded` (F10e).
+- Cut order: F10b, F10c, F10d -> F10e.
+- Built: F10a-F10e (`lib/first-screen.ts`, `app/components/first-screen.tsx`). Amended on review: the proof card is labelled "Example" with the line "What PropWorth shows for a 1BR in Luma Park Views · Real numbers for October 2026, our pilot building in JVC", so it does not read as someone else's home.
+

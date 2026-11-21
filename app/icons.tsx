@@ -9,6 +9,7 @@ const PATHS = {
   news: "M5 5h11v14H5zM16 9h3v8a2 2 0 0 1-2 2M8 9h5M8 12h5M8 15h3",
   phone: "M6 3h3l2 5-2 1a11 11 0 0 0 6 6l1-2 5 2v3a2 2 0 0 1-2 2A16 16 0 0 1 4 5a2 2 0 0 1 2-2z",
   chevron: "M9 5l7 7-7 7",
+  passport: "M6 3h12v18H6zM12 13a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM9 17h6",
 } as const;
 
 export type IconName = keyof typeof PATHS;
