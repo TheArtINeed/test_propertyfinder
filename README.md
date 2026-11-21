@@ -1,5 +1,7 @@
 # PropWorth "My Home" prototype (Property Finder)
 
+**Live prototype (open on a phone): https://test-propertyfinder.vercel.app**
+
 After the PropWorth valuation, a unit becomes **My Home**: a monthly update on rents, deals and demand in the building, plus one next step. The owner's intent ("rent out from / open to offers from / not now") becomes a qualified lead for agents and an "owner-confirmed" signal for renters. Renters get Rent watch and a renewal check; buyers get a fair-price and bank-gap check that turns into My Home with one tap.
 
 Business case: `ONE-PAGER.md`. Dev spec: `docs/SPEC.md`.
@@ -31,6 +33,18 @@ Hooks on existing Property Finder screens (sketched at `/entry-points`) and why 
 - **Account tab in the app** — "My Home: add the home you own". A permanent home in the app for owners, next to their searches.
 - **Rent search results in JVC** — "Already renting in JVC? Check if your rent is fair before renewal". Renters near renewal compare prices here. Answer the question they actually have.
 - **Mortgage calculator on a resale listing** — "Will the bank value it at the price? Check before you offer". Buyers fear a low bank valuation. After the deal the same check becomes their home's value.
+
+### Beyond the site: design mockups (not built)
+Static concepts for the entry points that bring owners back without them opening the site first (source: `docs/mockups/entry_points.html`, re-render with `docs/mockups/render.sh`). Numbers match the prototype's October 2026 update for Luma Park Views 1204.
+
+| Monthly push, WhatsApp, email | "Did you buy?" on a quiet saved search | Scout answers with My Home | My Home as an app tab |
+|---|---|---|---|
+| ![Monthly push](docs/mockups/entry-1-monthly-push.png) | ![Did you buy](docs/mockups/entry-2-did-you-buy.png) | ![Scout](docs/mockups/entry-3-scout.png) | ![App tab](docs/mockups/entry-4-app-tab.png) |
+
+- **Monthly push, WhatsApp, email**: the update comes to the owner on the 1st of the month; this is what makes the visit monthly. The lease-end reminder arrives 3 months before the tenant's lease ends.
+- **"Did you buy?"**: a saved search that goes quiet for weeks usually means the search ended in a deal. One tap turns the buyer into a My Home owner, so the search does not end at the purchase.
+- **Scout**: owners already ask the assistant what their home is worth; the answer is a PropWorth card with "Get this every month".
+- **My Home tab**: a permanent place in the app next to Search and Saved, with a badge when the new update is out.
 
 ## Data
 Real public data: Dubai Land Department resales and Ejari contracts for JVC, 1 Jan – 20 Nov 2026 (`dataset/`).

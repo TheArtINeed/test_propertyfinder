@@ -1,0 +1,211 @@
+<!doctype html>
+<!--
+  Design-only mockups: entry points into My Home from outside the prototype.
+  Not part of the app. Render one frame with ?f=1..4 (see render.sh).
+  Numbers match the prototype's October 2026 digest for Luma Park Views 1204 (1BR, 80 m²).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=375">
+<title>My Home entry points</title>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #EA3934; --primary-tint: #FEF5F5;
+    --sec: #3A307F; --sec-dark: #1F1948; --sec-200: #E7E5F4; --sec-100: #F7F7FC;
+    --teal: #2E7992; --teal-100: #EFF9FF;
+    --text: #333333; --text-2: #707070; --muted: #919191;
+    --border: #E3E3E3; --bg-subtle: #F7F7F7; --success: #00A663; --wa: #4DBD43;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Open Sans", system-ui, sans-serif; color: var(--text); background: #fff; width: 375px; }
+  .frame { width: 375px; height: 812px; position: relative; overflow: hidden; display: none; background: #fff; }
+  .frame.on { display: block; }
+  .status { height: 44px; display: flex; justify-content: space-between; align-items: center; padding: 0 24px; font-size: 14px; font-weight: 600; }
+  .tiny { font-size: 10px; line-height: 16px; color: var(--text-2); }
+  .meta { font-size: 12px; line-height: 20px; color: var(--text-2); }
+  .btn { display: block; text-align: center; border-radius: 999px; font-size: 14px; font-weight: 600; line-height: 24px; padding: 10px 16px; }
+  .btn.red { background: var(--primary); color: #fff; }
+  .btn.out { border: 1px solid #8C84CC; color: var(--sec); background: #fff; }
+  .logo { font-weight: 700; font-size: 18px; color: var(--primary); letter-spacing: -0.3px; }
+  .logo span { color: var(--sec-dark); }
+
+  /* 1. Lock screen */
+  .lock { background: linear-gradient(170deg, #2C255E 0%, #1F1948 45%, #0f0c26 100%); color: #fff; }
+  .lock .status { color: #fff; }
+  .lock .date { text-align: center; font-size: 18px; font-weight: 600; margin-top: 18px; opacity: .9; }
+  .lock .clock { text-align: center; font-size: 84px; font-weight: 300; line-height: 1; margin-top: 4px; letter-spacing: -2px; }
+  .notes { position: absolute; left: 10px; right: 10px; top: 300px; display: flex; flex-direction: column; gap: 8px; }
+  .note { background: rgba(245,245,250,.88); color: #111; border-radius: 20px; padding: 12px 14px; display: flex; gap: 10px; }
+  .note .ic { width: 38px; height: 38px; border-radius: 9px; flex: none; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 15px; }
+  .note .body { flex: 1; min-width: 0; }
+  .note .top { display: flex; justify-content: space-between; font-size: 13px; }
+  .note .top b { font-weight: 700; }
+  .note .top span { color: #6b6b6b; font-size: 12px; }
+  .note p { font-size: 13px; line-height: 18px; margin-top: 1px; }
+  .lock .hint { position: absolute; bottom: 30px; left: 0; right: 0; text-align: center; font-size: 13px; opacity: .7; }
+
+  /* App chrome */
+  .appbar { height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid var(--border); }
+  .tabbar { position: absolute; bottom: 0; left: 0; right: 0; height: 78px; border-top: 1px solid var(--border); background: #fff; display: flex; justify-content: space-around; padding-top: 8px; }
+  .tab { text-align: center; font-size: 10px; color: var(--text-2); width: 64px; position: relative; }
+  .tab .i { width: 24px; height: 24px; margin: 0 auto 2px; border-radius: 6px; border: 2px solid currentColor; }
+  .tab.sel { color: var(--sec); font-weight: 600; }
+  .tab .new { position: absolute; top: -4px; right: 6px; background: var(--primary); color: #fff; font-size: 9px; font-weight: 600; border-radius: 999px; padding: 0 5px; line-height: 14px; }
+  .content { padding: 16px; }
+  .search { border: 1px solid #CCCCCC; border-radius: 999px; padding: 10px 16px; font-size: 14px; color: var(--text-2); box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .chips { display: flex; gap: 8px; margin-top: 12px; }
+  .chip { border: 1px solid #CCCCCC; border-radius: 999px; padding: 4px 12px; font-size: 12px; }
+  .chip.sel { background: var(--sec-200); border-color: #6459B2; color: var(--sec); font-weight: 600; }
+  .card { border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-top: 16px; background: #fff; }
+  .h2 { font-size: 20px; font-weight: 600; line-height: 32px; }
+  .h3 { font-size: 16px; font-weight: 600; line-height: 24px; }
+  .row { display: flex; gap: 8px; margin-top: 12px; }
+  .row .btn { flex: 1; }
+  .ph { height: 120px; border-radius: 12px 12px 0 0; background: linear-gradient(135deg, #E7E5F4, #F7F7FC); margin: -16px -16px 12px; display: grid; place-items: center; color: var(--muted); font-size: 12px; }
+  .listing { display: flex; gap: 12px; padding: 12px 0; border-top: 1px solid var(--border); }
+  .listing .thumb { width: 88px; height: 64px; border-radius: 8px; background: var(--bg-subtle); flex: none; }
+  .price { font-size: 16px; font-weight: 600; }
+  .section-title { font-size: 14px; font-weight: 600; margin-top: 20px; }
+  .badge { display: inline-block; font-size: 10px; font-weight: 600; border-radius: 999px; padding: 1px 8px; }
+  .badge.teal { background: var(--teal-100); color: var(--teal); }
+  .badge.red { background: var(--primary-tint); color: var(--primary); }
+  .badge.green { background: #DEFFEA; color: var(--success); }
+
+  /* 3. Scout */
+  .scout-top { background: var(--sec-dark); color: #fff; }
+  .scout-top .appbar { border: 0; }
+  .bubble { max-width: 80%; border-radius: 16px; padding: 10px 14px; font-size: 14px; line-height: 21px; margin-top: 12px; }
+  .bubble.me { margin-left: auto; background: var(--sec); color: #fff; border-bottom-right-radius: 4px; }
+  .bubble.bot { background: var(--sec-100); border-bottom-left-radius: 4px; }
+  .value { font-size: 24px; font-weight: 600; line-height: 36px; }
+  .kv { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-top: 1px solid var(--border); }
+  .composer { position: absolute; bottom: 24px; left: 16px; right: 16px; border: 1px solid #CCCCCC; border-radius: 999px; padding: 10px 16px; font-size: 14px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- 1. Monthly trigger: push, WhatsApp, email -->
+<section class="frame lock" id="f1">
+  <div class="status"><span>9:41</span><span>●●● 5G ▮</span></div>
+  <div class="date">Sunday, 1 November</div>
+  <div class="clock">9:41</div>
+  <div class="notes">
+    <div class="note">
+      <div class="ic" style="background:var(--primary)">pf</div>
+      <div class="body">
+        <div class="top"><b>Property Finder</b><span>now</span></div>
+        <p><b>Your home in October</b><br>Luma Park Views 1204 is worth AED 1.21M–1.34M, +6.8% over 3 months.</p>
+      </div>
+    </div>
+    <div class="note">
+      <div class="ic" style="background:var(--wa)">✆</div>
+      <div class="body">
+        <div class="top"><b>Property Finder</b><span>now</span></div>
+        <p><b>Luma Park Views · October</b><br>5 resales in your building; 21 new leases like yours, median AED 80K. Next step: open to offers?</p>
+      </div>
+    </div>
+    <div class="note">
+      <div class="ic" style="background:#2f7cf6">✉</div>
+      <div class="body">
+        <div class="top"><b>Property Finder</b><span>8:00</span></div>
+        <p><b>Your tenant's lease ends in 3 months</b><br>New leases here: median AED 80K. Renew or re-let?</p>
+      </div>
+    </div>
+  </div>
+  <div class="hint">Swipe up to open</div>
+</section>
+
+<!-- 2. "Did you buy?" on the app home -->
+<section class="frame" id="f2">
+  <div class="status"><span>9:41</span><span>●●● 5G ▮</span></div>
+  <div class="appbar"><div class="logo">property<span>finder</span></div><span class="meta">AE ▾</span></div>
+  <div class="content">
+    <div class="search">Search JVC, Dubai Marina…</div>
+    <div class="chips"><span class="chip sel">Buy</span><span class="chip">Rent</span><span class="chip">New projects</span></div>
+    <div class="card">
+      <span class="badge teal">Saved search · quiet for 6 weeks</span>
+      <div class="h3" style="margin-top:8px">Did you buy a home?</div>
+      <p class="meta">Your search "1 bed for sale in JVC, up to AED 1.5M" has had no visits since September.</p>
+      <div class="row"><span class="btn red">Yes, add it</span><span class="btn out">Still looking</span></div>
+      <p class="tiny" style="margin-top:8px">Your home gets a monthly update: value, deals and rents in the building.</p>
+    </div>
+    <div class="section-title">New in your saved search</div>
+    <div class="listing"><div class="thumb"></div><div><div class="price">AED 1,350,000</div><div class="meta">1 bed · 80 m² · Luma Park Views, JVC</div></div></div>
+    <div class="listing"><div class="thumb"></div><div><div class="price">AED 1,190,000</div><div class="meta">1 bed · 74 m² · JVC District 12</div></div></div>
+  </div>
+  <div class="tabbar">
+    <div class="tab sel"><div class="i"></div>Search</div>
+    <div class="tab"><div class="i"></div>Saved</div>
+    <div class="tab"><div class="i"></div>Scout</div>
+    <div class="tab"><div class="i"></div>My Home</div>
+    <div class="tab"><div class="i"></div>Account</div>
+  </div>
+</section>
+
+<!-- 3. Scout answers with My Home -->
+<section class="frame" id="f3">
+  <div class="scout-top">
+    <div class="status" style="color:#fff"><span>9:41</span><span>●●● 5G ▮</span></div>
+    <div class="appbar"><span>‹</span><b>Scout</b><span class="tiny" style="color:#D1CFED">AI</span></div>
+  </div>
+  <div class="content">
+    <div class="bubble me">How much is my flat worth? Luma Park Views, 1 bed, 80 m²</div>
+    <div class="bubble bot">Based on recent resales in your building:</div>
+    <div class="card" style="margin-top:8px">
+      <p class="meta">Luma Park Views · 1BR · 80 m²</p>
+      <div class="value">AED 1.21M – 1.34M</div>
+      <span class="badge green">▲ 6.8% over 3 months</span>
+      <div style="margin-top:12px">
+        <div class="kv"><span>Median new-lease rent</span><b>AED 80K / year</b></div>
+        <div class="kv"><span>Gross yield</span><b>6.2% (JVC 7.6%)</b></div>
+      </div>
+      <p class="tiny">PropWorth estimate · DLD and Ejari data, 2026</p>
+      <span class="btn red" style="margin-top:12px">Get this every month</span>
+    </div>
+    <div class="bubble bot">Want me to compare your rent with new leases in the building?</div>
+  </div>
+  <div class="composer">Ask Scout anything…</div>
+</section>
+
+<!-- 4. My Home as an app tab -->
+<section class="frame" id="f4">
+  <div class="status"><span>9:41</span><span>●●● 5G ▮</span></div>
+  <div class="appbar"><div class="h3">My Home</div><span style="color:var(--sec);font-size:14px;font-weight:600">+ Add</span></div>
+  <div class="content">
+    <div class="card">
+      <div class="ph">Luma Park Views</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="h3">Luma Park Views · 1204</div>
+        <span class="badge red">New update</span>
+      </div>
+      <p class="meta">1BR · 80 m² · Rented out until 31 Jan 2027</p>
+      <div class="value" style="margin-top:4px">AED 1.21M – 1.34M</div>
+      <span class="badge green">▲ 6.8% over 3 months</span>
+      <div style="margin-top:12px">
+        <div class="kv"><span>October in your building</span><b>5 resales · 21 leases</b></div>
+        <div class="kv"><span>Your plan</span><b>Rent out from 1 Feb</b></div>
+      </div>
+      <span class="btn red" style="margin-top:12px">Open October update</span>
+    </div>
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center">
+      <div><div class="h3">Own another home?</div><p class="meta">Track every unit in one place</p></div>
+      <span class="btn out" style="padding:6px 14px">Add</span>
+    </div>
+  </div>
+  <div class="tabbar">
+    <div class="tab"><div class="i"></div>Search</div>
+    <div class="tab"><div class="i"></div>Saved</div>
+    <div class="tab"><div class="i"></div>Scout</div>
+    <div class="tab sel"><span class="new">1</span><div class="i"></div>My Home</div>
+    <div class="tab"><div class="i"></div>Account</div>
+  </div>
+</section>
+
+<script>
+  const f = new URLSearchParams(location.search).get("f") || "1";
+  document.getElementById("f" + f).classList.add("on");
+</script>
+</body>
+</html>
